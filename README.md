@@ -1,27 +1,40 @@
 # Prerequisites
 
-* Python 3.7 >=
-* Pip 20.1 >=
+* Python >=3.7
+* Pip >=20.1
+* Poetry >=1.16
 
 # Development
 
 ## Environment setup
 
-* Create virtual environment
+Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
+To check if Poetry is installed, run ```poetry --version```. If your receive 'command not found: poetry' error, add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
+
+To setup your development environment, do the following:
+
+1. Create virtual environment
+
+Run the following command on the CLI. By default, poetry creates a virtual environment in {cache-dir}/virtualenvs
+({cache-dir}\virtualenvs on Windows). For more info on creating virtual environments through Poetry, see [this](https://python-poetry.org/docs/basic-usage/#using-your-virtual-environment).
 
 ```shell
-$ python -m venv env
-$ source env/bin/activate
-(env) $ pip install --upgrade pip
+$ poetry shell
 ```
 
-* Install requirements
+NOTE: Poetry needs the command 'python' in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
+```shell
+$ sudo apt install python-is-python3
+```
+
+2. Install requirements
 
 ```shell
-(env) $ pip install -r requirements.txt
+(env) $ poetry install
 ```
 
-* Build volttron wheels (these packages are needed to provide the volttron-specific dependencies for this agent)
+
+3. Install Volttron-specific dependencies for this agent.
 
 ```shell
 (env) $ pip install volttron_utils-0.1.1-py3-none-any.whl volttron_client-0.1.2-py3-none-any.whl

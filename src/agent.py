@@ -111,7 +111,7 @@ class OpenADRVenAgent(Agent):
 
     def initialize_config(self, config: Dict) -> None:
         """
-            Initialize the agent's configuration.
+            Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
             Configuration parameters (see config for a sample config file):
 
         str ven_name: The name for this VEN
@@ -141,7 +141,7 @@ class OpenADRVenAgent(Agent):
         _log.info("Configuration parameters:")
         _log.info(pformat(config))
 
-        # instantiate and add handlers to the openadrclient
+        # instantiate and add handlers to the OpenADR Client
         self.ven_client = OpenADRClient(
             ven_name=self.ven_name,
             vtn_url=self.vtn_url,
