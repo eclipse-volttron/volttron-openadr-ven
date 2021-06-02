@@ -39,6 +39,7 @@
 
 import logging
 import asyncio
+import sys
 
 from pprint import pformat
 from typing import Dict
@@ -49,7 +50,7 @@ from openleadr.enums import OPT
 from openleadr.objects import Event
 
 from volttron.platform.agent import utils
-from volttron.platform.vip.agent import Agent, Core
+from volttron.platform.vip.agent import Agent, Core, RPC
 from volttron.platform.messaging import topics, headers
 from volttron.utils import jsonapi
 
@@ -161,16 +162,37 @@ class OpenADRVenAgent(Agent):
         config.update(contents)
         self.initialize_config(config)
 
-    # # TODO: Investigate how to run async methods within Volttron Agent Framework
-    # @Core.receiver("onstart")
-    # def onstart_method(self) -> None:
-    #     """The agent has started."""
-    #     _log.debug("Starting agent")
-    #     # Running the ven_client in the Python AsyncIO Event Loop
-    #     # the client will automagically register with the VTN and then start polling the VTN for new messages
-    #     loop = asyncio.get_event_loop()
-    #     loop.create_task(self.ven_client.run())
-    #     loop.run_forever()
+    # ***************** Methods for Managing the Agent on Volttron ********************
+
+    # TODO: Investigate how to run async methods within Volttron Agent Framework
+    @Core.receiver("onstart")
+    def onstart(self) -> None:
+        """The agent has started."""
+        _log.debug("Starting agent")
+
+        # Running the ven_client in the Python AsyncIO Event Loop
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.ven_client.run())
+        loop.run_forever()
+
+    # # TODO: Identify actions needed to be done before shutdown
+    # @Core.receiver("onstop")
+    # def onstop(self, sender, **kwargs):
+    #     """
+    #     This method is called when the Agent is about to shutdown, but before it disconnects from
+    #     the message bus.
+    #     """
+    #     pass
+    #
+    # # TODO: Identify what, if at all, RPC methods should be available to other Agents
+    # @RPC.export
+    # def rpc_method(self, arg1, arg2, kwarg1=None, kwarg2=None):
+    #     """
+    #     RPC method
+    #
+    #     May be called from another agent via self.vip.rpc.call
+    #     """
+    #     pass
 
     # ***************** Methods for Servicing VTN Requests ********************
 
@@ -239,6 +261,19 @@ class OpenADRVenAgent(Agent):
         """When calling jsonapi.dumps, convert datetime instances to strings."""
         if isinstance(object_to_dump, dt):
             return object_to_dump.__str__()
+
+
+def main():
+    """Main method called to start the agent."""
+    utils.vip_main(ven_agent, version=__version__)
+
+
+if __name__ == "__main__":
+    # Entry point for script
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        pass
 
 
 def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
