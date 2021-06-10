@@ -40,17 +40,18 @@
 import logging
 import asyncio
 import sys
+import openleadr.enums
 
 from pprint import pformat
 from typing import Dict
-from datetime import datetime as dt
+from datetime import datetime
 
-from openleadr import OpenADRClient
 from openleadr.enums import OPT
 from openleadr.objects import Event
+from openleadr import OpenADRClient
 
 from volttron.platform.agent import utils
-from volttron.platform.vip.agent import Agent, Core, RPC
+from volttron.platform.vip.agent import Agent, Core
 from volttron.platform.messaging import topics, headers
 from volttron.utils import jsonapi
 
@@ -107,7 +108,8 @@ class OpenADRVenAgent(Agent):
         )
 
         # properties of the this class will be initialized in initialize_config
-        # self.ven_client is an instance of OpenLeadr's OpenADRClient, an implementation of OpenADR; this will be instantiated in initialize_config
+        # self.ven_client is an instance of OpenLeadr's OpenADRClient, an implementation of OpenADR;
+        # OpenADRClient will be instantiated in initialize_config
         self.initialize_config(self.default_config)
 
     def initialize_config(self, config: Dict) -> None:
@@ -153,7 +155,8 @@ class OpenADRVenAgent(Agent):
             ca_file=self.ca_file,
         )
 
-        # if you want to add more handlers on a specific event, you must create a callback function in this class and then add it as the second input for 'add_handler'
+        # if you want to add more handlers on a specific event, you must create a coroutine
+        # in this class and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
         self.ven_client.add_handler("on_event", self.handle_event)
 
     def _configure(self, contents: Dict) -> None:
@@ -164,7 +167,6 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Managing the Agent on Volttron ********************
 
-    # TODO: Investigate how to run async methods within Volttron Agent Framework
     @Core.receiver("onstart")
     def onstart(self) -> None:
         """The agent has started."""
@@ -196,9 +198,10 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Servicing VTN Requests ********************
 
-    async def handle_event(self, event: Event) -> OPT:
+    async def handle_event(self, event: openleadr.objects.Event) -> openleadr.enums.OPT:
         """
         Publish event to the Volttron message bus. Return OPT response.
+        This coroutine will be called when there is an event to be handled.
 
         :param event: Event
         For more info on shape of 'event', see https://openleadr.org/docs/client.html#dealing-with-events and https://openleadr.org/docs/api/openleadr.html#openleadr.objects.Event
@@ -221,14 +224,14 @@ class OpenADRVenAgent(Agent):
            'targets': [{'resource_id': 'Device001'}],
            'targets_by_type': {'resource_id': ['Device001']}
         }
-        :return: OPT
+        :return: openleadr.enums.OPT
         """
         _log.info(f"Event: {pformat(event)}")
         self.publish_event(event)
         return OPT.OPT_IN
 
     # ***************** VOLTTRON Pub/Sub Requests ********************
-    def publish_event(self, event: Event) -> None:
+    def publish_event(self, event: openleadr.objects.Event) -> None:
         """Publish an event to the Volttron message bus. When an event is created/updated, it is published to the VOLTTRON bus with a topic that includes 'openadr/event_update'.
         :param event:
         :return: None
@@ -252,15 +255,10 @@ class OpenADRVenAgent(Agent):
     # ***************** Helper methods ********************
     def _json_object(self, obj: Dict):
         """Ensure that an object is valid JSON by dumping it with json_converter and then reloading it."""
-        obj_string = jsonapi.dumps(obj, default=self.json_converter)
-        obj_json = jsonapi.loads(obj_string)
-        return obj_json
-
-    @staticmethod
-    def json_converter(object_to_dump):
-        """When calling jsonapi.dumps, convert datetime instances to strings."""
-        if isinstance(object_to_dump, dt):
-            return object_to_dump.__str__()
+        obj_string = jsonapi.dumps(
+            obj, default=lambda x: x.__str__() if isinstance(x, datetime) else None
+        )
+        return jsonapi.loads(obj_string)
 
 
 def main():
@@ -269,7 +267,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # Entry point for script
     try:
         sys.exit(main())
     except KeyboardInterrupt:
