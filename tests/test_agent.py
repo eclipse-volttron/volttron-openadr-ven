@@ -1,9 +1,6 @@
-import os
 from unittest import mock
-
 from volttron.platform.vip.agent import Agent
-
-from src.agent import OpenADRVenAgent, ven_agent
+from volttron_openadr_ven import OpenADRVenAgent, ven_agent
 
 
 class AgentMock(object):
@@ -37,6 +34,5 @@ OpenADRVenAgent.__bases__ = (AgentMock.imitate(Agent, Agent()),)
 
 def test_ven_agent_should_create_OpenADRVenAgent():
     expected_config = {"ven_name": "test_ven"}
-    # actual_agent = ven_agent(os.path.join(os.getcwd(), "test_config.json"))
     actual_agent = OpenADRVenAgent("test_ven", None, None, None, None, None, None, None)
     assert actual_agent.ven_name == expected_config["ven_name"]
