@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "volttron-openadr-ven"
+version = "0.1.0"
+description = "A Volttron agent that acts as a Virtual End Node (VEN) within the OpenADR 2.0b specification."
+authors = ["Mark Bonicillo <mark.bonicillo@pnnl.gov>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+openleadr = "^0.5.23"
+black = "^21.5b2"
+mypy = "^0.812"
+pre-commit = "^2.13.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
