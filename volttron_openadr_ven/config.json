@@ -1,0 +1,6 @@
+{
+  "ven_name": "PNNLVEN",
+  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+  "debug": true,
+  "disable_signature": true
+}

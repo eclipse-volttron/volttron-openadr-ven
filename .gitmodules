@@ -1,0 +1,3 @@
+[submodule "openleadr"]
+	path = openleadr
+	url = git@github.com:bonicim/openleadr-python.git
