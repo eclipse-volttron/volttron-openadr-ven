@@ -44,7 +44,7 @@ import openleadr.enums
 from pprint import pformat
 from datetime import datetime
 
-from openleadr.enums import OPT
+from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr import OpenADRClient
 
 from volttron.utils import (
@@ -169,9 +169,19 @@ class OpenADRVenAgent(Agent):
             disable_signature=config.get(DISABLE_SIGNATURE),
         )
 
+        # Add event handling capability to the client
         # if you want to add more handlers on a specific event, you must create a coroutine in this class
         # and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
         self.ven_client.add_handler("on_event", self.handle_event)
+
+        # Add the report capability to the client
+        # the following is a report to be sent to a IPKeys test VTN
+        self.ven_client.add_report(
+            callback=self.collect_report_value,
+            report_name=REPORT_NAME.TELEMETRY_USAGE,
+            resource_id="device001",
+            measurement=MEASUREMENTS.VOLTAGE,
+        )
 
         _log.info("Configuration complete.")
 
@@ -253,6 +263,11 @@ class OpenADRVenAgent(Agent):
         self.publish_event(event)
 
         return OPT.OPT_IN
+
+    async def collect_report_value(self):
+        # This callback is called when you need to collect a value for your Report
+        # below is dummy code; replace with your business logic
+        return 1.23
 
     # ***************** VOLTTRON Pub/Sub Requests ********************
     def publish_event(self, event: dict) -> None:
