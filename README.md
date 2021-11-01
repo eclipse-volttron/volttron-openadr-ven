@@ -17,9 +17,12 @@ correct configuration with optional parameters added.
 
         # below are optional parameters
 
-        # if you want/need to sign outgoing messages using a public-private key pair, use the following
-        "cert": "/home/bono/Workplace/volttron-project/volttron-openadr-ven/secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
-        "key": "/home/bono/Workplace/volttron-project/volttron-openadr-ven/secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+        # if you want/need to sign outgoing messages using a public-private key pair, you need to add a directory named "secret" in the top level
+        # of this repo; then provide the relative path to the cert and key
+        # below is an example
+        # test certificates for IP Keys VTN's can be obtained at https://testcerts.kyrio.com/#/
+        "cert": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
+        "key": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
 
         # other optional parameters
         "debug": true,

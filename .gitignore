@@ -131,3 +131,4 @@ dmypy.json
 .idea/
 
 *secret
+config_local.json
