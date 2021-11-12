@@ -1,38 +1,21 @@
-from unittest import mock
-from volttron.platform.vip.agent import Agent
-from volttron_openadr_ven import OpenADRVenAgent, ven_agent
+import os
+
+import openleadr
+
+from volttron_openadr_ven.agent import OpenADRVenAgent, ven_agent
 
 
-class AgentMock(object):
-    """
-    The purpose for this parent class is to be used for unit
-    testing of agents. It takes in the class methods of other
-    classes, turns them into it's own mock methods. For testing,
-    dynamically replace the agent's current base class with this
-    class, while passing in the agent's current classes as arguments.
-    For example:
-        Agent_to_test.__bases__ = (AgentMock.imitate(Agent, Agent()), )
-    As noted in the example, __bases__ takes in a tuple.
-    Also, the parent class Agent is passed as both Agent and the
-    instantiated Agent(), since it contains a class within it
-    that needs to be mocked as well
-    """
-
-    @classmethod
-    def imitate(cls, *others):
-        for other in others:
-            for name in other.__dict__:
-                try:
-                    setattr(cls, name, mock.create_autospec(other.__dict__[name]))
-                except (TypeError, AttributeError):
-                    pass
-        return cls
+def test_agent_should_create_openadrven_client():
+    agent = OpenADRVenAgent("test_ven", "https://fakevtnserver.com")
+    assert isinstance(agent.ven_client, openleadr.client.OpenADRClient)
 
 
-OpenADRVenAgent.__bases__ = (AgentMock.imitate(Agent, Agent()),)
+def test_ven_agent_wrapper_should_create_openadrven_client():
+    agent = ven_agent(os.path.join(os.getcwd(), "config_test.json"))
+    assert isinstance(agent.ven_client, openleadr.client.OpenADRClient)
 
 
-def test_ven_agent_should_create_OpenADRVenAgent():
-    expected_config = {"ven_name": "test_ven"}
-    actual_agent = OpenADRVenAgent("test_ven", None, None, None, None, None, None, None)
-    assert actual_agent.ven_name == expected_config["ven_name"]
+# Integration tests
+# TODO: Implement test when volttron-testing package is created
+# def test_on_start_should_publish_event_to_volttron():
+#     pass

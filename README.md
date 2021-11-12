@@ -1,43 +1,85 @@
-# Prerequisites
+# OpenADRVen Agent
+
+OpenADR (Automated Demand Response) is a standard for alerting and responding to the need to adjust electric power
+consumption in response to fluctuations in grid demand.
+
+For further information about OpenADR and this agent, please see the OpenADR documentation in VOLTTRON ReadTheDocs.
+
+## Agent Configuration
+
+The only required parameters for this agent are "ven_name" and "vtn_url". Below is an example of a
+correct configuration with optional parameters added.
+
+```jsonpath
+    {
+        "ven_name": "PNNLVEN",
+        "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+
+        # below are optional parameters
+
+        # if you want/need to sign outgoing messages using a public-private key pair, you need to add a directory named "secret" in the top level
+        # of this repo; then provide the relative path to the cert and key
+        # below is an example
+        # test certificates for IP Keys VTN's can be obtained at https://testcerts.kyrio.com/#/
+        "cert": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
+        "key": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+
+        # other optional parameters
+        "debug": true,
+        "disable_signature": true
+    }
+```
+
+## Volttron integration
+
+To ensure that this agent is created within the Volttron framework, ensure that you set the following environmental variable
+to the absolute path of the configuration JSON file for this agent. For example, on Linux, use the following example to set
+the environmental variable AGENT_CONFIG to a path to your JSON config file:
+
+`export AGENT_CONFIG /home/usr/path-to-my-config-file`
+
+# Development
+
+## Prerequisites
 
 * Python >=3.7
 * Pip >=20.1
 * Poetry >=1.16
 
-# Development
 
 ## Environment setup
 
 Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
-To check if Poetry is installed, run ```poetry --version```. If your receive 'command not found: poetry' error, add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
+To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
 
-To setup your development environment, do the following:
+0. Install the required submodules
+
+```git submodule update --init --recursive```
 
 1. Create virtual environment
 
-Run the following command on the CLI. By default, poetry creates a virtual environment in {cache-dir}/virtualenvs
-({cache-dir}\virtualenvs on Windows). For more info on creating virtual environments through Poetry, see [this](https://python-poetry.org/docs/basic-usage/#using-your-virtual-environment).
+By default, poetry creates a virtual environment in {cache-dir}/virtualenvs
+({cache-dir}\virtualenvs on Windows). To configure 'poetry' to create the virtualenv inside this project's root
+directory, run the following command:
+
+[```poetry config virtualenvs.in-project true```](https://python-poetry.org/docs/configuration
+)
+
+Then to create the virtual environment itself, run the following command:
 
 ```shell
-$ poetry shell
+poetry shell
 ```
 
 NOTE: Poetry needs the command 'python' in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
 ```shell
-$ sudo apt install python-is-python3
+sudo apt install python-is-python3
 ```
 
 2. Install requirements
 
 ```shell
-(env) $ poetry install
-```
-
-
-3. Install Volttron-specific dependencies for this agent.
-
-```shell
-(env) $ pip install volttron_utils-0.1.1-py3-none-any.whl volttron_client-0.1.2-py3-none-any.whl
+poetry install
 ```
 
 
@@ -46,16 +88,21 @@ $ sudo apt install python-is-python3
 ## Git Hooks and Pre-commit
 
 This repo provides pre-commit hooks to enforce code quality and standardization before pushing any commit to the repo. To use this tool locally,
-run the following commands:
+run the following command.
 
 ```shell
-(env) $ pre-commit install
-
-# To check that pre-commit scripts are installed and properly run, run pre-commit on all the files
-(env) $ pre-commit run --all
+pre-commit install
 ```
 
-With pre-commit setup, every time you run "git commit", git will check your commit against a set of code linters. For details, see .pre-commit-config.yaml
+To check that pre-commit scripts are installed and properly run, run pre-commit on all the files:
+
+```
+pre-commit run --all
+```
+
+With pre-commit installed and configured, every time you run `git commit`, git will check your commit against a set of code linters. For details, see .pre-commit-config.yaml
+
+This project installs the following tools to aid in code standardization and best practices:
 
 ## Black
 
@@ -63,14 +110,14 @@ This repo uses [Black](https://pypi.org/project/black/), an opinionated Python c
 run the following command on your chosen Python file:
 
 ```shell
-(env) $ black <path to file>
+black <path to file>
 ```
 
 ## MyPy
 
 This repo uses [MyPy](https://mypy.readthedocs.io/en/stable/), a static type checker for Python. To use MyPy on a Python file, run the following command:
 ```shell
-(env) $ mypy <path to file>
+mypy <path to file>
 ```
 
 # CI/CD
@@ -93,3 +140,23 @@ Test uploading
 
 Upload to PyPi
 ```python -m twin upload dist/*```
+
+
+# Testing
+
+## Ven Certificates
+
+https://testcerts.kyrio.com/#/
+
+## Test VTN's
+
+* IPKeys: https://eiss2demo.ipkeys.com/ui/home/#/login
+
+# Other
+
+## Installing dependencies behind a proxy
+
+If running this behind a PNNL VPN, run the following so Poetry can install all the dependencies:
+See: https://leifengblog.net/blog/how-to-use-pip-behind-a-proxy/
+
+```export https_proxy=http://proxy01.pnl.gov:3128```

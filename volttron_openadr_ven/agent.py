@@ -42,21 +42,37 @@ import sys
 import openleadr.enums
 
 from pprint import pformat
-from typing import Dict
 from datetime import datetime
 
-from openleadr.enums import OPT
-from openleadr.objects import Event
+from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr import OpenADRClient
 
-from volttron.platform.agent import utils
-from volttron.platform.vip.agent import Agent, Core
-from volttron.platform.messaging import topics, headers
-from volttron.utils import jsonapi
+from volttron.utils import (
+    get_aware_utc_now,
+    jsonapi,
+    setup_logging,
+    vip_main,
+    format_timestamp,
+    load_config,
+)
+from volttron.client.vip.agent import Agent, Core
+from volttron.client.messaging import topics, headers
 
-utils.setup_logging()
+setup_logging(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
+
+VEN_NAME = "ven_name"
+VTN_URL = "vtn_url"
+DEBUG = "debug"
+CERT = "cert"
+KEY = "key"
+PASSPHRASE = "passphrase"
+VTN_FINGERPRINT = "vtn_fingerprint"
+SHOW_FINGERPRINT = "show_fingerprint"
+CA_FILE = "ca_file"
+VEN_ID = "ven_id"
+DISABLE_SIGNATURE = "disable_signature"
 
 
 class OpenADRVenAgent(Agent):
@@ -72,106 +88,116 @@ class OpenADRVenAgent(Agent):
         self,
         ven_name: str,
         vtn_url: str,
-        debug: bool,
-        cert: str,
-        key: str,
-        fingerprint: str,
-        show_fingerprint: str,
-        ca_file: str,
+        debug: bool = False,
+        cert: str = None,
+        key: str = None,
+        passphrase: str = None,
+        vtn_fingerprint: str = None,
+        show_fingerprint: str = None,
+        ca_file: str = None,
+        ven_id: str = None,
+        disable_signature: bool = None,
         **kwargs,
     ) -> None:
-        super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
-        self.ven_name = None
-        self.vtn_url = None
-        self.debug = None
-        self.cert = None
-        self.key = None
-        self.fingerprint = None
-        self.show_fingerprint = None
-        self.ca_file = None
-        self.ven_id = None
+        """
+                Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
+                Configuration parameters (see config for a sample config file):
 
+                str ven_name: The name for this VEN
+                str vtn_url: The URL of the VTN (Server) to connect to
+                bool debug: Whether or not to print debugging messages
+                str cert: The path to a PEM-formatted Certificate file to use
+                                 for signing messages.
+                str key: The path to a PEM-formatted Private Key file to use
+                                for signing messages.
+                str passphrase: The passphrase for the Private Key
+                str vtn_fingerprint: The fingerprint for the VTN's certificate to
+                                        verify incomnig messages
+                str show_fingerprint: Whether to print your own fingerprint
+                                             on startup. Defaults to True.
+                str ca_file: The path to the PEM-formatted CA file for validating the VTN server's
+                                    certificate.
+                str ven_id: The ID for this VEN. If you leave this blank, a VEN_ID will be assigned by the VTN.
+                bool disable_signature: Whether to disable digital signatures
+                """
+        super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
+
+        # client will be initialized in configure_agent()
+        self.ven_client: OpenADRClient
         self.default_config = {
-            "ven_name": ven_name,
-            "vtn_url": vtn_url,
-            "debug": debug,
-            "cert": cert,
-            "key": key,
-            "fingerprint": fingerprint,
-            "show_fingerprint": show_fingerprint,
-            "ca_file": ca_file,
+            VEN_NAME: ven_name,
+            VTN_URL: vtn_url,
+            DEBUG: debug,
+            CERT: cert,
+            KEY: key,
+            PASSPHRASE: passphrase,
+            VTN_FINGERPRINT: vtn_fingerprint,
+            SHOW_FINGERPRINT: show_fingerprint,
+            CA_FILE: ca_file,
+            VEN_ID: ven_id,
+            DISABLE_SIGNATURE: disable_signature,
         }
+
+        # SubSystem/ConfigStore
         self.vip.config.set_default("config", self.default_config)
         self.vip.config.subscribe(
             self._configure, actions=["NEW", "UPDATE"], pattern="config"
         )
 
-        # properties of the this class will be initialized in initialize_config
-        # self.ven_client is an instance of OpenLeadr's OpenADRClient, an implementation of OpenADR;
-        # OpenADRClient will be instantiated in initialize_config
-        self.initialize_config(self.default_config)
+        # initialize all attributes of this class
+        self.configure_agent(self.default_config)
 
-    def initialize_config(self, config: Dict) -> None:
+    def configure_agent(self, config: dict) -> None:
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
-            Configuration parameters (see config for a sample config file):
-
-        str ven_name: The name for this VEN
-        str vtn_url: The URL of the VTN (Server) to connect to
-        bool debug: Whether or not to print debugging messages
-        str cert: The path to a PEM-formatted Certificate file to use
-                         for signing messages.
-        str key: The path to a PEM-formatted Private Key file to use
-                        for signing messages.
-        str fingerprint: The fingerprint for the VTN's certificate to
-                                verify incomnig messages
-        str show_fingerprint: Whether to print your own fingerprint
-                                     on startup. Defaults to True.
-        str ca_file: The path to the PEM-formatted CA file for validating the VTN server's
-                            certificate.
         """
-        _log.debug("Configuring agent")
-        self.ven_name = config.get("ven_name")
-        self.vtn_url = config.get("vtn_url")
-        self.debug = config.get("debug", False)
-        self.cert = config.get("cert")
-        self.key = config.get("key")
-        self.fingerprint = config.get("fingerprint")
-        self.show_fingerprint = config.get("show_fingerprint", True)
-        self.ca_file = config.get("ca_file")
-
-        _log.info("Configuration parameters:")
-        _log.info(pformat(config))
+        _log.debug(f"Configuring agent with: \n {pformat(config)} ")
 
         # instantiate and add handlers to the OpenADR Client
+        _log.info("Creating OpenLeadrVen Client...")
         self.ven_client = OpenADRClient(
-            ven_name=self.ven_name,
-            vtn_url=self.vtn_url,
-            debug=self.debug,
-            cert=self.cert,
-            key=self.key,
-            show_fingerprint=self.show_fingerprint,
-            ca_file=self.ca_file,
+            ven_name=config.get(VEN_NAME),
+            vtn_url=config.get(VTN_URL),
+            debug=config.get(DEBUG),
+            cert=config.get(CERT),
+            key=config.get(KEY),
+            passphrase=config.get(PASSPHRASE),
+            vtn_fingerprint=config.get(VTN_FINGERPRINT),
+            show_fingerprint=config.get(SHOW_FINGERPRINT),
+            ca_file=config.get(CA_FILE),
+            ven_id=config.get(VEN_ID),
+            disable_signature=config.get(DISABLE_SIGNATURE),
         )
 
-        # if you want to add more handlers on a specific event, you must create a coroutine
-        # in this class and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
+        # Add event handling capability to the client
+        # if you want to add more handlers on a specific event, you must create a coroutine in this class
+        # and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
         self.ven_client.add_handler("on_event", self.handle_event)
 
-    def _configure(self, contents: Dict) -> None:
+        # Add the report capability to the client
+        # the following is a report to be sent to a IPKeys test VTN
+        self.ven_client.add_report(
+            callback=self.collect_report_value,
+            report_name=REPORT_NAME.TELEMETRY_USAGE,
+            resource_id="device001",
+            measurement=MEASUREMENTS.VOLTAGE,
+        )
+
+        _log.info("Configuration complete.")
+
+    def _configure(self, config_name, action, contents: dict) -> None:
         """The agent's config may have changed. Re-initialize it."""
         config = self.default_config.copy()
         config.update(contents)
-        self.initialize_config(config)
+        self.configure_agent(config)
 
     # ***************** Methods for Managing the Agent on Volttron ********************
 
     @Core.receiver("onstart")
-    def onstart(self) -> None:
+    def onstart(self, sender) -> None:
         """The agent has started."""
-        _log.debug("Starting agent")
-
-        # Running the ven_client in the Python AsyncIO Event Loop
+        _log.info(f"Sender {sender}")
+        _log.info("Starting agent...")
         loop = asyncio.get_event_loop()
         loop.create_task(self.ven_client.run())
         loop.run_forever()
@@ -197,13 +223,12 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Servicing VTN Requests ********************
 
-    async def handle_event(self, event: openleadr.objects.Event) -> openleadr.enums.OPT:
+    async def handle_event(self, event: dict) -> openleadr.enums.OPT:
         """
         Publish event to the Volttron message bus. Return OPT response.
         This coroutine will be called when there is an event to be handled.
 
-        :param event: Event
-        For more info on shape of 'event', see https://openleadr.org/docs/client.html#dealing-with-events and https://openleadr.org/docs/api/openleadr.html#openleadr.objects.Event
+        :param event: dict
         Example of event:
         {
             'event_id': '123786-129831',
@@ -225,51 +250,63 @@ class OpenADRVenAgent(Agent):
         }
         :return: openleadr.enums.OPT
         """
-        _log.info(f"Event: {pformat(event)}")
+        try:
+            _log.debug("Received event. Processing event now...")
+            signal = event.get("event_signals")[0]  # type: ignore[index]
+            _log.info(f"Event signal:\n {pformat(signal)}")
+        except IndexError as e:
+            _log.debug(
+                f"Event signals is empty. {e} \n Showing whole event: {pformat(event)}"
+            )
+            pass
+
         self.publish_event(event)
+
         return OPT.OPT_IN
 
+    async def collect_report_value(self):
+        # This callback is called when you need to collect a value for your Report
+        # below is dummy code; replace with your business logic
+        return 1.23
+
     # ***************** VOLTTRON Pub/Sub Requests ********************
-    def publish_event(self, event: openleadr.objects.Event) -> None:
+    def publish_event(self, event: dict) -> None:
         """Publish an event to the Volttron message bus. When an event is created/updated, it is published to the VOLTTRON bus with a topic that includes 'openadr/event_update'.
-        :param event:
+        :param event: dict
         :return: None
         """
         # OADR rule 6: If testEvent is present and != "false", handle the event as a test event.
-        if event.event_descriptor.test_event != "false":
-            _log.debug(f"Suppressing publication of test event {event}")
-            return
+        try:
+            if event["event_descriptor"]["test_event"]:
+                _log.debug("Suppressing publication of test event")
+                return
+        except KeyError as e:
+            _log.debug(f"Key error: {e}")
+            pass
 
-        _log.debug("Publishing event {}".format(event))
+        _log.debug(f"Publishing real/non-test event \n {pformat(event)}")
         self.vip.pubsub.publish(
             peer="pubsub",
-            topic=f"{topics.OPENADR_EVENT}/{self.ven_id}",
-            headers={
-                headers.TIMESTAMP: utils.format_timestamp(utils.get_aware_utc_now())
-            },
-            message=self._json_object(event.__dict__),
+            topic=f"{topics.OPENADR_EVENT}/{self.ven_client.ven_name}",
+            headers={headers.TIMESTAMP: format_timestamp(get_aware_utc_now())},
+            message=self._json_object(event),
         )
+
         return
 
     # ***************** Helper methods ********************
-    def _json_object(self, obj: Dict):
+    def _json_object(self, obj: dict):
         """Ensure that an object is valid JSON by dumping it with json_converter and then reloading it."""
         obj_string = jsonapi.dumps(
-            obj, default=lambda x: x.__str__() if isinstance(x, datetime) else None
+            obj,
+            default=lambda x: x.__str__() if isinstance(x, datetime) else None,
         )
         return jsonapi.loads(obj_string)
 
 
 def main():
     """Main method called to start the agent."""
-    utils.vip_main(ven_agent, version=__version__)
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        pass
+    vip_main(ven_agent, version=__version__)
 
 
 def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
@@ -280,10 +317,13 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
 
     :param config_path: (str) Path to a configuration file.
 
-    :returns: OpenADRVenAgent instance
+    :returns: OpenADRVenAgent
     """
     try:
-        config = utils.load_config(config_path)
+        config = load_config(config_path)
+    except NameError as err:
+        _log.exception(err)
+        raise
     except Exception as err:
         _log.error("Error loading configuration: {}".format(err))
         config = {}
@@ -291,31 +331,42 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
     if not config:
         raise Exception("Configuration cannot be empty.")
 
-    ven_name = config.get("ven_name")
+    ven_name = config.get(VEN_NAME)
     if not ven_name:
-        raise Exception("ven_name is required.")
-    vtn_url = config.get("vtn_url")
+        raise Exception(f"{VEN_NAME} is required.")
+    vtn_url = config.get(VTN_URL)
     if not vtn_url:
         raise Exception(
-            "vtn_url is required. Ensure vtn_url is given a URL to the VTN."
+            f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
         )
-
-    # below are optional configurations
-    debug = config.get("debug")
-    cert = config.get("cert")
-    key = config.get("key")
-    fingerprint = config.get("fingerprint")
-    show_fingerprint = config.get("show_fingerprint")
-    ca_file = config.get("ca_file")
+    debug = config.get(DEBUG)
+    cert = config.get(CERT)
+    key = config.get(KEY)
+    passphrase = config.get(PASSPHRASE)
+    vtn_fingerprint = config.get(VTN_FINGERPRINT)
+    show_fingerprint = config.get(SHOW_FINGERPRINT)
+    ca_file = config.get(CA_FILE)
+    ven_id = config.get(VEN_ID)
+    disable_signature = bool(config.get(DISABLE_SIGNATURE))
 
     return OpenADRVenAgent(
         ven_name,
         vtn_url,
-        debug,
-        cert,
-        key,
-        fingerprint,
-        show_fingerprint,
-        ca_file,
+        debug=debug,
+        cert=cert,
+        key=key,
+        passphrase=passphrase,
+        vtn_fingerprint=vtn_fingerprint,
+        show_fingerprint=show_fingerprint,
+        ca_file=ca_file,
+        ven_id=ven_id,
+        disable_signature=disable_signature,
         **kwargs,
     )
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        pass
