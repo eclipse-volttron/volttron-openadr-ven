@@ -132,3 +132,4 @@ dmypy.json
 
 *secret
 config_local.json
+.DS_Store

@@ -10,7 +10,7 @@ For further information about OpenADR and this agent, please see the OpenADR doc
 The only required parameters for this agent are "ven_name" and "vtn_url". Below is an example of a
 correct configuration with optional parameters added.
 
-```jsonpath
+```
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
@@ -45,14 +45,49 @@ the environmental variable AGENT_CONFIG to a path to your JSON config file:
 * Python >=3.7
 * Pip >=20.1
 * Poetry >=1.16
+* VEN certificates
 
+
+### Poetry
+
+This project uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
+To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
+
+NOTE: Poetry needs the command 'python' in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
+```shell
+sudo apt install python-is-python3
+```
+
+### VEN Certificates
+If you plan on using the VEN with certificates, you need to download certificates at: https://testcerts.kyrio.com/#/. 
+Those certificates will be in a ZIP folder. Unzip the contents of that folder and save them to a root level folder named
+'secret'. Your 'secret' folder should look like the following:
+
+```
+secret/
+└── TEST_RSA_VEN_210923215148_certs
+    ├── TEST_OpenADR_RSA_MCA0002_Cert.pem
+    ├── TEST_OpenADR_RSA_RCA0002_Cert.pem
+    ├── TEST_RSA_VEN_210923215148_cert_Fingerprint.txt
+    ├── TEST_RSA_VEN_210923215148_cert.pem
+    └── TEST_RSA_VEN_210923215148_privkey.pem
+```
+
+The certificates in 'secret' can be used as values for the optional "cert" and "key" fields of the
+agent configuration. For example, using the 'secret' folder above, we can create a config file for this agent such as the following:
+
+```json
+{
+  "ven_name": "PNNLVEN",
+  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+  "cert": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
+  "key": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+}
+```
 
 ## Environment setup
 
-Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
-To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
-
-0. Install the required submodules
+0. Install all required git submodules:
 
 ```git submodule update --init --recursive```
 
@@ -71,10 +106,6 @@ Then to create the virtual environment itself, run the following command:
 poetry shell
 ```
 
-NOTE: Poetry needs the command 'python' in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
-```shell
-sudo apt install python-is-python3
-```
 
 2. Install requirements
 
@@ -82,6 +113,18 @@ sudo apt install python-is-python3
 poetry install
 ```
 
+3. Run the Volttron platform in another shell. Open a shell window and then start the Volttron platform using `volttron -vv`. 
+The Volttron platform should be running on the same host that this OpenADRVEN agent is running on. 
+
+4. Run the OpenADRVEN agent in another shell. Open a shell window and then run the OpenADRVEN agent. 
+Ensure that you are at the root level of this project. Also ensure that you set the environment variable, 
+AGENT_CONFIG to the absolute path of the agent configuration for this OpenADRVEN agent. The config will 
+most likely reside in the same directory as the 'agent.py' module, which is located under the directory
+'volttron_openadr_ven'.
+
+```shell
+poetry run': AGENT_CONFIG=<path to agent config> run python volttron_openadr_ven/agent.py 
+```
 
 ## Code Quality and Standardization
 
@@ -96,7 +139,7 @@ pre-commit install
 
 To check that pre-commit scripts are installed and properly run, run pre-commit on all the files:
 
-```
+```shell
 pre-commit run --all
 ```
 
@@ -128,25 +171,8 @@ TODO:
 
 TODO:
 
-Build wheel
-```python setup.py -q sdist bdist_wheel```
-
-Check wheel
-```check-wheel-contents dist/*.whl```
-```tar tzf <>```
-
-Test uploading
-```twine upload --repository-url https://test.pypi.org/legacy/ dist/*```
-
-Upload to PyPi
-```python -m twin upload dist/*```
-
 
 # Testing
-
-## Ven Certificates
-
-https://testcerts.kyrio.com/#/
 
 ## Test VTN's
 
@@ -154,7 +180,9 @@ https://testcerts.kyrio.com/#/
 
 # Other
 
-## Installing dependencies behind a proxy
+## Installing dependencies behind PNNL VPN
+
+If you are NOT using a Pacific Northwest National Lab (PNNL) VPN, you can skip this section.
 
 If running this behind a PNNL VPN, run the following so Poetry can install all the dependencies:
 See: https://leifengblog.net/blog/how-to-use-pip-behind-a-proxy/
