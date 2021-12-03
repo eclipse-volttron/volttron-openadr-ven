@@ -56,22 +56,11 @@ from volttron.utils import (
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
 from volttron_openleadr import VolttronOpenADRClient
+from volttron_openadr_ven import *
 
 setup_logging(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
-
-VEN_NAME = "ven_name"
-VTN_URL = "vtn_url"
-DEBUG = "debug"
-CERT = "cert"
-KEY = "key"
-PASSPHRASE = "passphrase"
-VTN_FINGERPRINT = "vtn_fingerprint"
-SHOW_FINGERPRINT = "show_fingerprint"
-CA_FILE = "ca_file"
-VEN_ID = "ven_id"
-DISABLE_SIGNATURE = "disable_signature"
 
 
 class OpenADRVenAgent(Agent):
