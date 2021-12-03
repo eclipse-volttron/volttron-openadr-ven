@@ -38,6 +38,8 @@
 import logging
 import asyncio
 import sys
+import os
+import gevent
 import openleadr.enums
 
 from pprint import pformat
@@ -52,6 +54,7 @@ from volttron.utils import (
     vip_main,
     format_timestamp,
     load_config,
+    isapipe,
 )
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
@@ -294,7 +297,38 @@ class OpenADRVenAgent(Agent):
 
 def main():
     """Main method called to start the agent."""
-    vip_main(ven_agent, version=__version__)
+    # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, uncomment the line below and remove vip_main_tmp
+    # vip_main(ven_agent, version=__version__)
+    vip_main_tmp()
+
+
+def vip_main_tmp():
+    # this function borrows code from volttron.utils.commands.vip_main
+    # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
+    import argparse
+
+    # Instantiate the parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_path")
+    args = parser.parse_args()
+
+    if isapipe(sys.stdout):
+        # Hold a reference to the previous file object so it doesn't
+        # get garbage collected and close the underlying descriptor.
+        stdout = sys.stdout
+        sys.stdout = os.fdopen(stdout.fileno(), "w", 1)
+
+    agent = ven_agent(args.config_path)
+
+    try:
+        run = agent.run
+    except AttributeError:
+        run = agent.core.run
+    task = gevent.spawn(run)
+    try:
+        task.join()
+    finally:
+        task.kill()
 
 
 def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
@@ -349,6 +383,9 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
         ca_file=ca_file,
         ven_id=ven_id,
         disable_signature=disable_signature,
+        identity="openadr_ven",
+        # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, remove the input 'address'
+        address=REMOTE_URL,
         **kwargs,
     )
 
