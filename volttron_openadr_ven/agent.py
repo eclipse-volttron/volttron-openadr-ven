@@ -35,7 +35,6 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
-
 import logging
 import asyncio
 import sys
@@ -45,7 +44,6 @@ from pprint import pformat
 from datetime import datetime
 
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
-from openleadr import OpenADRClient
 
 from volttron.utils import (
     get_aware_utc_now,
@@ -57,6 +55,7 @@ from volttron.utils import (
 )
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
+from volttron_openleadr import VolttronOpenADRClient
 
 setup_logging(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
@@ -123,7 +122,7 @@ class OpenADRVenAgent(Agent):
         super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
 
         # client will be initialized in configure_agent()
-        self.ven_client: OpenADRClient
+        self.ven_client: VolttronOpenADRClient
         self.default_config = {
             VEN_NAME: ven_name,
             VTN_URL: vtn_url,
@@ -155,7 +154,7 @@ class OpenADRVenAgent(Agent):
 
         # instantiate and add handlers to the OpenADR Client
         _log.info("Creating OpenLeadrVen Client...")
-        self.ven_client = OpenADRClient(
+        self.ven_client = VolttronOpenADRClient(
             ven_name=config.get(VEN_NAME),
             vtn_url=config.get(VTN_URL),
             debug=config.get(DEBUG),
