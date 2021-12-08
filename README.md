@@ -159,7 +159,7 @@ module with the path to the agent configuration file that you created as noted i
 
 
 ```shell
-AGENT_CONFIG=<path to agent config> poetry run python volttron_openadr_ven/agent.py <path to the config file>
+poetry run python volttron_openadr_ven/agent.py <path to the config file>
 ```
 
 
