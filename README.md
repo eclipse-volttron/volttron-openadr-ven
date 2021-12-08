@@ -150,6 +150,8 @@ recommended to put these certificates in a directory called 'secret' that is loc
 To create an event, click "Events" tab. Then click the "+" icon to create an event. Use the template "PNNLTestEvent" or
 "PNNLnontestevent" to create an event.
 
+![Alt text](screenshots/test_event_screenshot_ipkeys.png?raw=true "Screenshot of Events page of IPKeys GUI")
+
 ## Starting the OpenADRVen agent
 
 Now that we have both the environment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,

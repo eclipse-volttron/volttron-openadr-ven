@@ -51,7 +51,6 @@ from volttron.utils import (
     get_aware_utc_now,
     jsonapi,
     setup_logging,
-    vip_main,
     format_timestamp,
     load_config,
     isapipe,
@@ -59,7 +58,24 @@ from volttron.utils import (
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
 from volttron_openleadr import VolttronOpenADRClient
-from volttron_openadr_ven import *
+from volttron_openadr_ven import (
+    REQUIRED_KEYS,
+    VEN_NAME,
+    VTN_URL,
+    VIP_ADDRESS,
+    SERVER_KEY,
+    AGENT_PUBLIC,
+    AGENT_SECRET,
+    DEBUG,
+    CERT,
+    KEY,
+    PASSPHRASE,
+    VTN_FINGERPRINT,
+    SHOW_FINGERPRINT,
+    CA_FILE,
+    VEN_ID,
+    DISABLE_SIGNATURE,
+)
 
 setup_logging(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
