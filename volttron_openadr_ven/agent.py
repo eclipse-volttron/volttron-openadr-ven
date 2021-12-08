@@ -331,6 +331,31 @@ def vip_main_tmp():
         task.kill()
 
 
+def check_required_key(required_key, key_actual):
+    if required_key == VEN_NAME and not key_actual:
+        raise KeyError(f"{VEN_NAME} is required.")
+    elif required_key == VTN_URL and not key_actual:
+        raise KeyError(
+            f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
+        )
+    elif required_key == VIP_ADDRESS and not key_actual:
+        raise KeyError(
+            f"{VIP_ADDRESS} is required. For example, if running volttron instance locally, use tcp://127.0.0.1"
+        )
+    elif required_key == SERVER_KEY and not key_actual:
+        raise KeyError(
+            f"{SERVER_KEY} is required. To get the server key from the volttron instance that this agent will be connected to, use the command: vctl auth serverkey"
+        )
+    elif required_key == AGENT_PUBLIC and not key_actual:
+        raise KeyError(
+            f"{AGENT_PUBLIC} is required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
+        )
+    elif required_key == AGENT_SECRET and not key_actual:
+        raise KeyError(
+            f"{AGENT_SECRET} is required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
+        )
+
+
 def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
     """
         Parse the OpenADRVenAgent configuration file and return an instance of
@@ -353,40 +378,17 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
     if not config:
         raise Exception("Configuration cannot be empty.")
 
-    ven_name = config.get(VEN_NAME)
-    if not ven_name:
-        raise KeyError(f"{VEN_NAME} is required.")
-    vtn_url = config.get(VTN_URL)
-    if not vtn_url:
-        raise KeyError(
-            f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
-        )
-    vip_address = config.get(VIP_ADDRESS)
-    if not vip_address:
-        raise KeyError(
-            f"{VIP_ADDRESS} is required. For example, if running volttron instance locally, use tcp://127.0.0.1"
-        )
-    port = config.get(PORT)
-    if not port:
-        raise KeyError(f"{PORT} is required.")
-    server_key = config.get(SERVER_KEY)
-    if not server_key:
-        raise KeyError(
-            f"{SERVER_KEY} is required. To get the server key from the volttron instance that this agent will be connected to, use the command: vctl auth serverkey"
-        )
-
-    agent_public = config.get(AGENT_PUBLIC)
-    agent_secret = config.get(AGENT_SECRET)
-    if not agent_public and not agent_secret:
-        raise KeyError(
-            f"{AGENT_PUBLIC} and {AGENT_SECRET} are both required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
-        )
+    req_keys_actual = {k: "" for k in REQUIRED_KEYS}
+    for required_key in REQUIRED_KEYS:
+        key_actual = config.get(required_key)
+        check_required_key(required_key, key_actual)
+        req_keys_actual[required_key] = key_actual
 
     remote_url = (
-        f"{vip_address}:{port}"
-        f"?serverkey={server_key}"
-        f"&publickey={agent_public}"
-        f"&secretkey={agent_secret}"
+        f"{req_keys_actual[VIP_ADDRESS]}"
+        f"?serverkey={req_keys_actual[SERVER_KEY]}"
+        f"&publickey={req_keys_actual[AGENT_PUBLIC]}"
+        f"&secretkey={req_keys_actual[AGENT_SECRET]}"
     )
 
     debug = config.get(DEBUG)
@@ -400,8 +402,8 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
     disable_signature = bool(config.get(DISABLE_SIGNATURE))
 
     return OpenADRVenAgent(
-        ven_name,
-        vtn_url,
+        req_keys_actual[VEN_NAME],
+        req_keys_actual[VTN_URL],
         debug=debug,
         cert=cert,
         key=key,

@@ -11,7 +11,15 @@ CA_FILE = "ca_file"
 VEN_ID = "ven_id"
 DISABLE_SIGNATURE = "disable_signature"
 VIP_ADDRESS = "vip_address"
-PORT = "port"
 SERVER_KEY = "server_key"
 AGENT_PUBLIC = "agent_public"
 AGENT_SECRET = "agent_secret"
+
+REQUIRED_KEYS = [
+    VEN_NAME,
+    VTN_URL,
+    VIP_ADDRESS,
+    SERVER_KEY,
+    AGENT_PUBLIC,
+    AGENT_SECRET,
+]

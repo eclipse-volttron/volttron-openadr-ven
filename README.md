@@ -139,7 +139,7 @@ can receive such events from your VTN.
 
 ### IPKeys VTN configuration
 
-PNNL is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
+The community is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
 certificates, follow the instructions below:
 
 Get VEN certificates at https://testcerts.kyrio.com/#/. Store these certificates anywhere on your machine; it is highly
@@ -152,7 +152,7 @@ To create an event, click "Events" tab. Then click the "+" icon to create an eve
 
 ## Starting the OpenADRVen agent
 
-Now that we have both the environnment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,
+Now that we have both the environment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,
 we can finally run our OpenADRVen agent. Note: we are NOT installing this agent on the local Volttron platform. We will
 simply run this agent on the host machine. Navigate to the root level of this repo. Then run the ~/volttron_openadr_ven/agent.py
 module with the path to the agent configuration file that you created as noted in the "Agent Configuration" section at the beginning of this README.
