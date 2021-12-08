@@ -43,7 +43,7 @@ import gevent
 import openleadr.enums
 
 from pprint import pformat
-from datetime import datetime
+from datetime import timedelta
 
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 
@@ -306,7 +306,9 @@ class OpenADRVenAgent(Agent):
         """Ensure that an object is valid JSON by dumping it with json_converter and then reloading it."""
         obj_string = jsonapi.dumps(
             obj,
-            default=lambda x: x.__str__() if isinstance(x, datetime) else None,
+            default=lambda x: int(x.total_seconds())
+            if isinstance(x, timedelta)
+            else None,
         )
         return jsonapi.loads(obj_string)
 
