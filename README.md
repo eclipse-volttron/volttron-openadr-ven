@@ -42,11 +42,6 @@ An example of such a configuration JSON file is saved in that folder; the file i
 * Pip >=20.1
 * Poetry >=1.16
 
-Poetry needs the command `python` in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
-```shell
-sudo apt install python-is-python3
-```
-
 
 ## Environment setup
 
@@ -90,16 +85,24 @@ OpenADRVen agent so that the local Volttron platform can successfully authentica
 
 **Steps**
 
-1. With the local Volttron platform running, open a new shell and run `vctl auth serverkey`. Copy and paste output in ~/volttron_openadr_ven/__init__.py; put the output
-as the value of the "serverkey" property of the '_params' dictionary. An example of the command being run is shown below:
+1. With the local Volttron platform running, open a new shell and run `vctl auth serverkey`. Copy and paste output in the agent's config file. See example below:
 
 ```shell
 $ vctl auth serverkey
 FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI
+
+# Paste the output in config file for agent
+
+{
+  {
+  "ven_name": "PNNLVEN",
+  ...
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI"
+  }
+}
 ```
 
-2. On the same shell, run `vctl auth keypair`. Copy the values of `public` and `secret` and paste them in ~/volttron_openadr_ven/__init__.py as the values
-for the 'agent_public' and 'agent_secret' properties, respectively. An example of the command being run is shown below:
+2. On the same shell, run `vctl auth keypair`. Copy the values of `public` and `secret` and paste them in the agent's config file. See example below:
 
 ```shell
 $ vctl auth keypair
@@ -107,13 +110,25 @@ $ vctl auth keypair
   "public": "dyMf8g58ptiQTqI7EHbNr7PPFsAr2y-OIy1J-he_DCU",
   "secret": "iJa4mlZBomb3bDP8oRAN4IK8uXEqpl1MDg_te3aJzMo"
 }
+
+# Paste the output in config file for agent
+
+{
+  {
+  "ven_name": "PNNLVEN",
+  ...
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI",
+  "agent_public": "csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4",
+  "agent_secret": "4rv_l3oEzgmRxbPkGma2-tMhfPu47yyhi48ygF5hVQY"
+  }
+}
 ```
 
-3. Add the public key from 'public' in the previous step to the Volttron platform. Use `vctl auth add --credentials <public key>'.
+3. Add the public key, which was generated in the previous step, to the Volttron platform. Use `vctl auth add --credentials <public key>'.
 An example of the command being run is shown below:
 
 ```shell
-$ vctl auth add --credentials 'dyMf8g58ptiQTqI7EHbNr7PPFsAr2y-OIy1J-he_DCU'
+$ vctl auth add --credentials 'csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4'
 ```
 
 ## VTN Server setup
@@ -121,9 +136,11 @@ $ vctl auth add --credentials 'dyMf8g58ptiQTqI7EHbNr7PPFsAr2y-OIy1J-he_DCU'
 Depending on the type of VTN that you are using, you need to configure your VTN to send events so that the OpenADRVen agent
 can receive such events from your VTN.
 
-PNNL is currently testing this OpenADRVen agent against a IPKeys VTN. TO
 
-### IPKeys VTN configuration (PNNL test VTN)
+### IPKeys VTN configuration
+
+PNNL is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
+certificates, follow the instructions below:
 
 Get VEN certificates at https://testcerts.kyrio.com/#/. Store these certificates anywhere on your machine; it is highly
 recommended to put these certificates in a directory called 'secret' that is located at the root level of this repo.
@@ -142,7 +159,7 @@ module with the path to the agent configuration file that you created as noted i
 
 
 ```shell
-poetry run python volttron_openadr_ven/agent.py <path to the config file>
+AGENT_CONFIG=<path to agent config> poetry run python volttron_openadr_ven/agent.py <path to the config file>
 ```
 
 
@@ -192,14 +209,3 @@ This repo uses [MyPy](https://mypy.readthedocs.io/en/stable/), a static type che
 ```shell
 mypy <path to file>
 ```
-
-# Troubleshooting
-
-## Installing dependencies behind a proxy
-
-**If you are not running this agent behind the Pacific Northwest National Laboratories VPN, you can ignore this section.**
-
-If running this agent behind a PNNL VPN, run the following so Poetry can install all the dependencies:
-See: https://leifengblog.net/blog/how-to-use-pip-behind-a-proxy/
-
-```export https_proxy=http://proxy01.pnl.gov:3128```

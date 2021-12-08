@@ -355,12 +355,40 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
 
     ven_name = config.get(VEN_NAME)
     if not ven_name:
-        raise Exception(f"{VEN_NAME} is required.")
+        raise KeyError(f"{VEN_NAME} is required.")
     vtn_url = config.get(VTN_URL)
     if not vtn_url:
-        raise Exception(
+        raise KeyError(
             f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
         )
+    vip_address = config.get(VIP_ADDRESS)
+    if not vip_address:
+        raise KeyError(
+            f"{VIP_ADDRESS} is required. For example, if running volttron instance locally, use tcp://127.0.0.1"
+        )
+    port = config.get(PORT)
+    if not port:
+        raise KeyError(f"{PORT} is required.")
+    server_key = config.get(SERVER_KEY)
+    if not server_key:
+        raise KeyError(
+            f"{SERVER_KEY} is required. To get the server key from the volttron instance that this agent will be connected to, use the command: vctl auth serverkey"
+        )
+
+    agent_public = config.get(AGENT_PUBLIC)
+    agent_secret = config.get(AGENT_SECRET)
+    if not agent_public and not agent_secret:
+        raise KeyError(
+            f"{AGENT_PUBLIC} and {AGENT_SECRET} are both required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
+        )
+
+    remote_url = (
+        f"{vip_address}:{port}"
+        f"?serverkey={server_key}"
+        f"&publickey={agent_public}"
+        f"&secretkey={agent_secret}"
+    )
+
     debug = config.get(DEBUG)
     cert = config.get(CERT)
     key = config.get(KEY)
@@ -385,7 +413,7 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
         disable_signature=disable_signature,
         identity="openadr_ven",
         # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, remove the input 'address'
-        address=REMOTE_URL,
+        address=remote_url,
         **kwargs,
     )
 

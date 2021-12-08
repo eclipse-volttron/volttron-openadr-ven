@@ -4,5 +4,10 @@
   "cert": "secret/",
   "key": "secret/",
   "debug": true,
-  "disable_signature": true
+  "disable_signature": true,
+  "vip_address": "tcp://127.0.0.1",
+  "port": 22916,
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI",
+  "agent_public": "csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4",
+  "agent_secret": "4rv_l3oEzgmRxbPkGma2-tMhfPu47yyhi48ygF5hVQY"
 }
