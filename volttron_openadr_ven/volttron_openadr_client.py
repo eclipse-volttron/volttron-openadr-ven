@@ -11,21 +11,35 @@ from openleadr import utils, enums
 
 logger = logging.getLogger("volttron_openleadr")
 
+"""
+The VolttronOpenADR VEN agent uses the python library OpenLEADR https://github.com/openleadr/openleadr-python to create
+an OpenADR VEN client. This agent extends the OpenADRClient class from OpenLEADR so that it can have the flexibility
+to connect to any implementation of and OpenADR VTN. For example, to connect to an IPKeys VTN that was implemented
+on an old OpenADR protocol, the IPKeysDemoVTNOpenADRClient is created so that it can successfully connect to an IPKeys VTN.
 
-class VolttronOpenADRClient(OpenADRClient):
+If you have a specific VTN that you want to connect to and require further customization of the VEN client, create your
+own OpenADRClient by extending the base class VolttronOpenADRClientBase, updating your client with your business logic,
+and then adding that client to the dictionary: openadr_client_types.
+"""
+
+
+class VolttronOpenADRClientBase(OpenADRClient):
     def __init__(self, ven_name, vtn_url, disable_signature=False, **kwargs):
         super().__init__(ven_name, vtn_url, **kwargs)
         self.disable_signature = disable_signature
 
+
+class IPKeysDemoVTNOpenADRClient(VolttronOpenADRClientBase):
+    def __init__(self, ven_name, vtn_url, disable_signature, **kwargs):
+        super().__init__(ven_name, vtn_url, disable_signature, **kwargs)
+
         self._create_message = partial(
-            create_message,
+            self.create_message_ipkeys,
             cert=self.cert_path,
             key=self.key_path,
             passphrase=self.passphrase,
             disable_signature=self.disable_signature,
         )
-
-        logger.info("Creating VolttronOpenADRClient is completed.")
 
     async def _on_event(self, message):
         logger.debug("The VEN received an event")
@@ -138,39 +152,47 @@ class VolttronOpenADRClient(OpenADRClient):
                 "Not sending any event responses, because a response was not required/allowed by the VTN."
             )
 
-
-def create_message(
-    message_type,
-    cert=None,
-    key=None,
-    passphrase=None,
-    disable_signature=False,
-    **message_payload,
-):
-    """
-    Create and optionally sign an OpenADR message. Returns an XML string.
-    """
-    logger.info("Creating message using Volttron-patched create_message.")
-    message_payload = preflight_message(message_type, message_payload)
-    template = TEMPLATES.get_template(f"{message_type}.xml")
-    signed_object = utils.flatten_xml(template.render(**message_payload))
-    envelope = TEMPLATES.get_template("oadrPayload.xml")
-    if cert and key and not disable_signature:
-        tree = etree.fromstring(signed_object)
-        signature_tree = SIGNER.sign(
-            tree,
-            key=key,
-            cert=cert,
-            passphrase=utils.ensure_bytes(passphrase),
-            reference_uri="#oadrSignedObject",
-            signature_properties=_create_replay_protect(),
+    def create_message_ipkeys(
+        self,
+        message_type,
+        cert=None,
+        key=None,
+        passphrase=None,
+        disable_signature=False,
+        **message_payload,
+    ):
+        """
+        Create and optionally sign an OpenADR message. Returns an XML string.
+        """
+        message_payload = preflight_message(message_type, message_payload)
+        template = TEMPLATES.get_template(f"{message_type}.xml")
+        signed_object = utils.flatten_xml(template.render(**message_payload))
+        envelope = TEMPLATES.get_template("oadrPayload.xml")
+        if cert and key and not disable_signature:
+            tree = etree.fromstring(signed_object)
+            signature_tree = SIGNER.sign(
+                tree,
+                key=key,
+                cert=cert,
+                passphrase=utils.ensure_bytes(passphrase),
+                reference_uri="#oadrSignedObject",
+                signature_properties=_create_replay_protect(),
+            )
+            signature = etree.tostring(signature_tree).decode("utf-8")
+        else:
+            signature = None
+        msg = envelope.render(
+            template=f"{message_type}",
+            signature=signature,
+            signed_object=signed_object,
         )
-        signature = etree.tostring(signature_tree).decode("utf-8")
-    else:
-        signature = None
-    msg = envelope.render(
-        template=f"{message_type}",
-        signature=signature,
-        signed_object=signed_object,
-    )
-    return msg
+        return msg
+
+
+# create dictionary for openadr client types so that we can dynamically create openadrclients
+IPKEYS_CLIENT = "ipkeys"
+OPENLEADR_CLIENT = "openleadr"
+openadr_client_types = {
+    IPKEYS_CLIENT: IPKeysDemoVTNOpenADRClient,
+    OPENLEADR_CLIENT: VolttronOpenADRClientBase,
+}

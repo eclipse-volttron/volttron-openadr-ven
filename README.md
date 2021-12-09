@@ -21,17 +21,18 @@ correct configuration with optional parameters added.
         # of this repo; then provide the relative path to the cert and key
         # below is an example
         # test certificates for IP Keys VTN's can be obtained at https://testcerts.kyrio.com/#/
-        "cert": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
-        "key": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+        "cert_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
+        "key_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
 
         # other optional parameters
         "debug": true,
-        "disable_signature": true
+        "disable_signature": true,
+        "openadr_client_type": "ipkeys" # defaults to "openleadr", for a list of valid client types see 'openadr_client_types' dictionary in ~volttron_openadr_ven/volttron_openadr_client.py
     }
 ```
 
 Save this configuration in a JSON file in your preferred location; we recommend saving it in the `volttron_openadr_ven` directory.
-An example of such a configuration JSON file is saved in that folder; the file is called `config.json`
+An example of such a configuration is saved in the root of this repository; the file is named `config_example1.json`
 
 
 # Quickstart

@@ -46,6 +46,7 @@ from pprint import pformat
 from datetime import timedelta
 
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
+from openleadr.client import OpenADRClient
 
 from volttron.utils import (
     get_aware_utc_now,
@@ -57,8 +58,7 @@ from volttron.utils import (
 )
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
-from volttron_openleadr import VolttronOpenADRClient
-from volttron_openadr_ven import (
+from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
     VTN_URL,
@@ -75,7 +75,10 @@ from volttron_openadr_ven import (
     CA_FILE,
     VEN_ID,
     DISABLE_SIGNATURE,
+    OPENADR_CLIENT_TYPE,
+    IDENTITY,
 )
+from volttron_openadr_client import openadr_client_types, OPENLEADR_CLIENT
 
 setup_logging(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
@@ -104,6 +107,7 @@ class OpenADRVenAgent(Agent):
         ca_file: str = None,
         ven_id: str = None,
         disable_signature: bool = None,
+        openadr_client_type: str = OPENLEADR_CLIENT,
         **kwargs,
     ) -> None:
         """
@@ -126,11 +130,12 @@ class OpenADRVenAgent(Agent):
                                     certificate.
                 str ven_id: The ID for this VEN. If you leave this blank, a VEN_ID will be assigned by the VTN.
                 bool disable_signature: Whether to disable digital signatures
+                str openadr_client_type: The type of openadr client to use. Valid client types are defined in 'openadr_client_types' from ~/volttron_openadr_ven/volttron_openadr_client.py
                 """
         super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
 
         # client will be initialized in configure_agent()
-        self.ven_client: VolttronOpenADRClient
+        self.ven_client: OpenADRClient
         self.default_config = {
             VEN_NAME: ven_name,
             VTN_URL: vtn_url,
@@ -143,6 +148,7 @@ class OpenADRVenAgent(Agent):
             CA_FILE: ca_file,
             VEN_ID: ven_id,
             DISABLE_SIGNATURE: disable_signature,
+            OPENADR_CLIENT_TYPE: openadr_client_type,
         }
 
         # SubSystem/ConfigStore
@@ -158,13 +164,27 @@ class OpenADRVenAgent(Agent):
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
         """
-        _log.debug(f"Configuring agent with: \n {pformat(config)} ")
+        _log.info(f"Configuring agent with: \n {pformat(config)} ")
 
         # instantiate and add handlers to the OpenADR Client
-        _log.info("Creating OpenLeadrVen Client...")
-        self.ven_client = VolttronOpenADRClient(
-            ven_name=config.get(VEN_NAME),
-            vtn_url=config.get(VTN_URL),
+        client_type = config.get(OPENADR_CLIENT_TYPE)
+        try:
+            openadr_client = openadr_client_types[client_type]
+        except KeyError:
+            msg = (
+                f"OpenADR client type not found for: {client_type}. "
+                f"Please ensure that you specify a valid client type for configuration 'openadr_client_type'. "
+                f"Valid client types are: {list(openadr_client_types.keys())}"
+            )
+            _log.debug(msg)
+            raise KeyError(msg)
+
+        _log.info(
+            f"Creating OpenADRClient using OpenADRClient class: {openadr_client}"
+        )
+        self.ven_client = openadr_client(
+            config.get(VEN_NAME),
+            config.get(VTN_URL),
             debug=config.get(DEBUG),
             cert=config.get(CERT),
             key=config.get(KEY),
@@ -175,7 +195,11 @@ class OpenADRVenAgent(Agent):
             ven_id=config.get(VEN_ID),
             disable_signature=config.get(DISABLE_SIGNATURE),
         )
+        _log.info("OpenADRClient successfully created.")
 
+        _log.info(
+            "Adding capabilities (e.g. handlers, reports) to OpenADRClient..."
+        )
         # Add event handling capability to the client
         # if you want to add more handlers on a specific event, you must create a coroutine in this class
         # and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
@@ -190,7 +214,7 @@ class OpenADRVenAgent(Agent):
             measurement=MEASUREMENTS.VOLTAGE,
         )
 
-        _log.info("Configuration complete.")
+        _log.info("Capabilities successfully added.")
 
     def _configure(self, config_name, action, contents: dict) -> None:
         """The agent's config may have changed. Re-initialize it."""
@@ -409,6 +433,7 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
         f"&secretkey={req_keys_actual[AGENT_SECRET]}"
     )
 
+    # optional configurations
     debug = config.get(DEBUG)
     cert = config.get(CERT)
     key = config.get(KEY)
@@ -418,6 +443,7 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
     ca_file = config.get(CA_FILE)
     ven_id = config.get(VEN_ID)
     disable_signature = bool(config.get(DISABLE_SIGNATURE))
+    openadr_client_type = config.get(OPENADR_CLIENT_TYPE)
 
     return OpenADRVenAgent(
         req_keys_actual[VEN_NAME],
@@ -431,9 +457,10 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
         ca_file=ca_file,
         ven_id=ven_id,
         disable_signature=disable_signature,
-        identity="openadr_ven",
+        identity=IDENTITY,
         # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, remove the input 'address'
         address=remote_url,
+        openadr_client_type=openadr_client_type,
         **kwargs,
     )
 
