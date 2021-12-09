@@ -1,0 +1,13 @@
+{
+  "ven_name": "PNNLVEN",
+  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+  "cert": "/repos/volttron-openadr-ven/secrets/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
+  "key": "/repos/volttron-openadr-ven/secrets/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+  "debug": true,
+  "disable_signature": true,
+  "vip_address": "tcp://127.0.0.1",
+  "port": 22916,
+  "server_key": "O0kopjHCXsB8t1YAHHwUyxcPbhmXWTKkTEzK0uPEF1o",
+  "agent_public": "NYgaNhjTThJAmqqHIwbQplUQ606TYfyhUwIkLbmFOUU",
+  "agent_secret": "brF5nfExkVLXSncjdJy_-SAuAAOlrbFD2_imWuSocfg"
+}

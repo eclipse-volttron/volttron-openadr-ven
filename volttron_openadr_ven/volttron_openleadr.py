@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from abc import ABC
 
 from functools import partial
 from lxml import etree
@@ -12,7 +13,7 @@ from openleadr import utils, enums
 logger = logging.getLogger("volttron_openleadr")
 
 
-class VolttronOpenADRClient(OpenADRClient):
+class VolttronOpenADRClient(OpenADRClient, ABC):
     def __init__(self, ven_name, vtn_url, disable_signature=False, **kwargs):
         super().__init__(ven_name, vtn_url, **kwargs)
         self.disable_signature = disable_signature
