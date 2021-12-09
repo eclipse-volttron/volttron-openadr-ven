@@ -35,33 +35,61 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
-import logging
 import asyncio
-import sys
+import logging
 import os
-import gevent
-import openleadr.enums
-
-from pprint import pformat
+import sys
 from datetime import datetime
+from pprint import pformat
+from typing import Optional
 
+import gevent
+import openleadr
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 
-from volttron.utils import (
-    get_aware_utc_now,
-    jsonapi,
-    setup_logging,
-    vip_main,
-    format_timestamp,
-    load_config,
-    isapipe,
+# VOLTTRON 8.1.2 utilities
+from volttron.platform import jsonapi
+from volttron.platform.agent.utils import setup_logging, load_config, isapipe, format_timestamp, get_aware_utc_now
+from volttron.platform.messaging import headers, topics
+from volttron.platform.vip.agent import Agent, Core
+from volttron_openadr_ven.volttron_openleadr import VolttronOpenADRClient
+from volttron_openadr_ven import (
+    # key names for processing config file for OpenADR VEN agent
+    VEN_NAME,
+    VTN_URL,
+    DEBUG,
+    CERT,
+    KEY,
+    PASSPHRASE,
+    VTN_FINGERPRINT,
+    SHOW_FINGERPRINT,
+    CA_FILE,
+    VEN_ID,
+    DISABLE_SIGNATURE,
+    VIP_ADDRESS,
+    PORT,
+    SERVER_KEY,
+    AGENT_PUBLIC,
+    AGENT_SECRET
 )
-from volttron.client.vip.agent import Agent, Core
-from volttron.client.messaging import topics, headers
-from volttron_openleadr import VolttronOpenADRClient
-from volttron_openadr_ven import *
+
+# This is the location of new data structures
+# from volttron.utils import (
+#     get_aware_utc_now,
+#     jsonapi,
+#     setup_logging,
+#     vip_main,
+#     format_timestamp,
+#     load_config,
+#     isapipe,
+# )
+# from volttron.client.vip.agent import Agent, Core
+# from volttron.client.messaging import topics, headers
+
+# from volttron_openadr_ven import *
 
 setup_logging(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -76,19 +104,19 @@ class OpenADRVenAgent(Agent):
     """
 
     def __init__(
-        self,
-        ven_name: str,
-        vtn_url: str,
-        debug: bool = False,
-        cert: str = None,
-        key: str = None,
-        passphrase: str = None,
-        vtn_fingerprint: str = None,
-        show_fingerprint: str = None,
-        ca_file: str = None,
-        ven_id: str = None,
-        disable_signature: bool = None,
-        **kwargs,
+            self,
+            ven_name: str,
+            vtn_url: str,
+            debug: bool = False,
+            cert: str = None,
+            key: str = None,
+            passphrase: str = None,
+            vtn_fingerprint: str = None,
+            show_fingerprint: str = None,
+            ca_file: str = None,
+            ven_id: str = None,
+            disable_signature: bool = None,
+            **kwargs,
     ) -> None:
         """
                 Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
@@ -173,7 +201,8 @@ class OpenADRVenAgent(Agent):
             resource_id="device001",
             measurement=MEASUREMENTS.VOLTAGE,
         )
-
+        _log.info("Starting agent...")
+        gevent.spawn_later(3, self.start_async_event_loop)
         _log.info("Configuration complete.")
 
     def _configure(self, config_name, action, contents: dict) -> None:
@@ -184,14 +213,13 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Managing the Agent on Volttron ********************
 
-    @Core.receiver("onstart")
-    def onstart(self, sender) -> None:
-        """The agent has started."""
-        _log.info(f"Sender {sender}")
-        _log.info("Starting agent...")
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.ven_client.run())
-        loop.run_forever()
+    # @Core.receiver("onstart")
+    # def onstart(self, sender) -> None:
+    #     """The agent has started."""
+    #     _log.info(f"Sender {sender}")
+    #     _log.info("Starting agent...")
+    #     gevent.spawn_later(self.start_async_event_loop, seconds=3)
+
 
     # # TODO: Identify actions needed to be done before shutdown
     # @Core.receiver("onstop")
@@ -213,8 +241,15 @@ class OpenADRVenAgent(Agent):
     #     pass
 
     # ***************** Methods for Servicing VTN Requests ********************
+    def start_async_event_loop(self):
+        _log.debug("Starting event loop")
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.ven_client.run())
+        _log.debug("Running forever!")
+        loop.run_forever()
+        _log.debug("After running forever")
 
-    async def handle_event(self, event: dict) -> openleadr.enums.OPT:
+    def handle_event(self, event: dict) -> openleadr.enums.OPT:
         """
         Publish event to the Volttron message bus. Return OPT response.
         This coroutine will be called when there is an event to be handled.
@@ -295,22 +330,29 @@ class OpenADRVenAgent(Agent):
         return jsonapi.loads(obj_string)
 
 
-def main():
+def main(config_path):
     """Main method called to start the agent."""
     # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, uncomment the line below and remove vip_main_tmp
     # vip_main(ven_agent, version=__version__)
-    vip_main_tmp()
+    cfg = os.environ.get("AGENT_CONFIG")
+    sys.stdout.write(f"{cfg}\n")
+    sys.stdout.write(f"{config_path}\n")
+    sys.exit(vip_main_tmp(cfg))
+
+    # vip_main_tmp()
 
 
-def vip_main_tmp():
-    # this function borrows code from volttron.utils.commands.vip_main
-    # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
-    import argparse
+def vip_main_tmp(config_path: Optional[str] = None):
+    if config_path is None:
+        # this function borrows code from volttron.utils.commands.vip_main
+        # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
+        import argparse
 
-    # Instantiate the parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config_path")
-    args = parser.parse_args()
+        # Instantiate the parser
+        parser = argparse.ArgumentParser()
+        parser.add_argument("config_path")
+        args = parser.parse_args()
+        config_path = args.config_path
 
     if isapipe(sys.stdout):
         # Hold a reference to the previous file object so it doesn't
@@ -318,7 +360,7 @@ def vip_main_tmp():
         stdout = sys.stdout
         sys.stdout = os.fdopen(stdout.fileno(), "w", 1)
 
-    agent = ven_agent(args.config_path)
+    agent = ven_agent(config_path)
 
     try:
         run = agent.run
@@ -420,6 +462,8 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        cfg = os.environ.get("AGENT_CONFIG")
+        # sys.stdout.write(cfg)
+        sys.exit(vip_main_tmp(cfg))
     except KeyboardInterrupt:
         pass
