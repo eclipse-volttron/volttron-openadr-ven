@@ -48,16 +48,19 @@ from datetime import timedelta
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr.client import OpenADRClient
 
-from volttron.utils import (
+from . import (
     get_aware_utc_now,
-    jsonapi,
     setup_logging,
     format_timestamp,
     load_config,
     isapipe,
+    jsonapi,
+    topics,
+    headers,
+    Agent,
+    Core
 )
-from volttron.client.vip.agent import Agent, Core
-from volttron.client.messaging import topics, headers
+
 from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
@@ -80,7 +83,8 @@ from volttron_openadr_ven.constants import (
 )
 from volttron_openadr_client import openadr_client_types, OPENLEADR_CLIENT
 
-setup_logging(level=logging.DEBUG)
+#setup_logging(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -215,6 +219,7 @@ class OpenADRVenAgent(Agent):
         )
 
         _log.info("Capabilities successfully added.")
+        gevent.spawn_later(3, self.start_asyncio_loop)
 
     def _configure(self, config_name, action, contents: dict) -> None:
         """The agent's config may have changed. Re-initialize it."""
@@ -222,35 +227,11 @@ class OpenADRVenAgent(Agent):
         config.update(contents)
         self.configure_agent(config)
 
-    # ***************** Methods for Managing the Agent on Volttron ********************
-
-    @Core.receiver("onstart")
-    def onstart(self, sender) -> None:
-        """The agent has started."""
-        _log.info(f"Sender {sender}")
+    def start_asyncio_loop(self):
         _log.info("Starting agent...")
         loop = asyncio.get_event_loop()
         loop.create_task(self.ven_client.run())
         loop.run_forever()
-
-    # # TODO: Identify actions needed to be done before shutdown
-    # @Core.receiver("onstop")
-    # def onstop(self, sender, **kwargs):
-    #     """
-    #     This method is called when the Agent is about to shutdown, but before it disconnects from
-    #     the message bus.
-    #     """
-    #     pass
-    #
-    # # TODO: Identify what, if at all, RPC methods should be available to other Agents
-    # @RPC.export
-    # def rpc_method(self, arg1, arg2, kwarg1=None, kwarg2=None):
-    #     """
-    #     RPC method
-    #
-    #     May be called from another agent via self.vip.rpc.call
-    #     """
-    #     pass
 
     # ***************** Methods for Servicing VTN Requests ********************
 
