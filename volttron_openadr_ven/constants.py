@@ -22,6 +22,7 @@ REQUIRED_KEYS = [
     SERVER_KEY,
     AGENT_PUBLIC,
     AGENT_SECRET,
+    OPENADR_CLIENT_TYPE,
 ]
 
 IDENTITY = "openadr_ven"
