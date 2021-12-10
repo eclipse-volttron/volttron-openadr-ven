@@ -57,8 +57,7 @@ from . import (
     jsonapi,
     topics,
     headers,
-    Agent,
-    Core
+    Agent
 )
 
 from volttron_openadr_ven.constants import (
@@ -81,10 +80,9 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from volttron_openadr_client import openadr_client_types, OPENLEADR_CLIENT
+from . volttron_openadr_client import openadr_client_types, OPENLEADR_CLIENT
 
-#setup_logging(level=logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG)
+setup_logging()
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -326,14 +324,17 @@ def main():
 
 
 def vip_main_tmp():
-    # this function borrows code from volttron.utils.commands.vip_main
-    # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
-    import argparse
+    config_path = os.environ.get("AGENT_CONFIG")
+    if not config_path:
+        # this function borrows code from volttron.utils.commands.vip_main
+        # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
+        import argparse
 
-    # Instantiate the parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config_path")
-    args = parser.parse_args()
+        # Instantiate the parser
+        parser = argparse.ArgumentParser()
+        parser.add_argument("config_path")
+        args = parser.parse_args()
+        config_path = args.config_path
 
     if isapipe(sys.stdout):
         # Hold a reference to the previous file object so it doesn't
@@ -341,7 +342,7 @@ def vip_main_tmp():
         stdout = sys.stdout
         sys.stdout = os.fdopen(stdout.fileno(), "w", 1)
 
-    agent = ven_agent(args.config_path)
+    agent = ven_agent(config_path)
 
     try:
         run = agent.run
