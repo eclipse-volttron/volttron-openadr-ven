@@ -19,9 +19,9 @@ correct configuration with optional parameters added.
         # below are optional parameters
 
         # if you want/need to sign outgoing messages using a public-private key pair, provide the relative path to the cert_path and key_path
-        # in this example, the keypair is stored in a directory named 'secret'
-        "cert_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
-        "key_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+        # in this example, the keypair is stored in the directory named '~/.ssh/secret'
+        "cert_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_cert.pem",
+        "key_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_privkey.pem",
 
         # other optional parameters
         "debug": true,
