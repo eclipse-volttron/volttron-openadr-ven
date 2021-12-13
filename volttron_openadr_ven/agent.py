@@ -51,14 +51,18 @@ from datetime import timedelta
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr.client import OpenADRClient
 
-from volttron.utils import (
+from . import (
     get_aware_utc_now,
-    jsonapi,
     setup_logging,
     format_timestamp,
     load_config,
     isapipe,
+    jsonapi,
+    topics,
+    headers,
+    Agent
 )
+
 from volttron.client.vip.agent import Agent, Core
 from volttron.client.messaging import topics, headers
 
@@ -83,9 +87,10 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from volttron_openadr_client import openadr_client_type_class_names
+from . volttron_openadr_client import openadr_client_type_class_names
 
-setup_logging(level=logging.DEBUG)
+
+setup_logging()
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -216,6 +221,7 @@ class OpenADRVenAgent(Agent):
         )
 
         _log.info("Capabilities successfully added.")
+        gevent.spawn_later(3, self.start_asyncio_loop)
 
     def _configure(self, config_name, action, contents: dict) -> None:
         """The agent's config may have changed. Re-initialize it."""
@@ -223,35 +229,11 @@ class OpenADRVenAgent(Agent):
         config.update(contents)
         self.configure_agent(config)
 
-    # ***************** Methods for Managing the Agent on Volttron ********************
-
-    @Core.receiver("onstart")
-    def onstart(self, sender) -> None:
-        """The agent has started."""
-        _log.info(f"Sender {sender}")
+    def start_asyncio_loop(self):
         _log.info("Starting agent...")
         loop = asyncio.get_event_loop()
         loop.create_task(self.ven_client.run())
         loop.run_forever()
-
-    # # TODO: Identify actions needed to be done before shutdown
-    # @Core.receiver("onstop")
-    # def onstop(self, sender, **kwargs):
-    #     """
-    #     This method is called when the Agent is about to shutdown, but before it disconnects from
-    #     the message bus.
-    #     """
-    #     pass
-    #
-    # # TODO: Identify what, if at all, RPC methods should be available to other Agents
-    # @RPC.export
-    # def rpc_method(self, arg1, arg2, kwarg1=None, kwarg2=None):
-    #     """
-    #     RPC method
-    #
-    #     May be called from another agent via self.vip.rpc.call
-    #     """
-    #     pass
 
     # ***************** Methods for Servicing VTN Requests ********************
 
@@ -346,14 +328,17 @@ def main():
 
 
 def vip_main_tmp():
-    # this function borrows code from volttron.utils.commands.vip_main
-    # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
-    import argparse
+    config_path = os.environ.get("AGENT_CONFIG")
+    if not config_path:
+        # this function borrows code from volttron.utils.commands.vip_main
+        # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
+        import argparse
 
-    # Instantiate the parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config_path")
-    args = parser.parse_args()
+        # Instantiate the parser
+        parser = argparse.ArgumentParser()
+        parser.add_argument("config_path")
+        args = parser.parse_args()
+        config_path = args.config_path
 
     if isapipe(sys.stdout):
         # Hold a reference to the previous file object so it doesn't
@@ -361,7 +346,7 @@ def vip_main_tmp():
         stdout = sys.stdout
         sys.stdout = os.fdopen(stdout.fileno(), "w", 1)
 
-    agent = ven_agent(args.config_path)
+    agent = ven_agent(config_path)
 
     try:
         run = agent.run

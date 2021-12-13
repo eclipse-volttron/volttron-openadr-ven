@@ -152,8 +152,8 @@ class IPKeysVTNOpenADRClient(VolttronOpenADRClientBase):
                 "Not sending any event responses, because a response was not required/allowed by the VTN."
             )
 
+    @staticmethod
     def create_message_ipkeys(
-        self,
         message_type,
         cert=None,
         key=None,
