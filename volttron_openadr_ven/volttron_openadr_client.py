@@ -29,7 +29,7 @@ class VolttronOpenADRClientBase(OpenADRClient):
         self.disable_signature = disable_signature
 
 
-class IPKeysDemoVTNOpenADRClient(VolttronOpenADRClientBase):
+class IPKeysVTNOpenADRClient(VolttronOpenADRClientBase):
     def __init__(self, ven_name, vtn_url, disable_signature, **kwargs):
         super().__init__(ven_name, vtn_url, disable_signature, **kwargs)
 
@@ -189,10 +189,9 @@ class IPKeysDemoVTNOpenADRClient(VolttronOpenADRClientBase):
         return msg
 
 
-# create dictionary for openadr client types so that we can dynamically create openadrclients
 IPKEYS_CLIENT = "ipkeys"
 OPENLEADR_CLIENT = "openleadr"
-openadr_client_types = {
-    IPKEYS_CLIENT: IPKeysDemoVTNOpenADRClient,
-    OPENLEADR_CLIENT: VolttronOpenADRClientBase,
+openadr_client_type_class_names = {
+    IPKEYS_CLIENT: IPKeysVTNOpenADRClient.__name__,
+    OPENLEADR_CLIENT: VolttronOpenADRClientBase.__name__,
 }

@@ -14,20 +14,18 @@ correct configuration with optional parameters added.
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+        "openadr_client_type": "ipkeys" # for a list of valid client types see 'openadr_client_types' dictionary in ~volttron_openadr_ven/volttron_openadr_client.py
 
         # below are optional parameters
 
-        # if you want/need to sign outgoing messages using a public-private key pair, you need to add a directory named "secret" in the top level
-        # of this repo; then provide the relative path to the cert and key
-        # below is an example
-        # test certificates for IP Keys VTN's can be obtained at https://testcerts.kyrio.com/#/
-        "cert_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
-        "key_path": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+        # if you want/need to sign outgoing messages using a public-private key pair, provide the relative path to the cert_path and key_path
+        # in this example, the keypair is stored in the directory named '~/.ssh/secret'
+        "cert_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_cert.pem",
+        "key_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_privkey.pem",
 
         # other optional parameters
         "debug": true,
-        "disable_signature": true,
-        "openadr_client_type": "ipkeys" # defaults to "openleadr", for a list of valid client types see 'openadr_client_types' dictionary in ~volttron_openadr_ven/volttron_openadr_client.py
+        "disable_signature": true
     }
 ```
 
@@ -74,7 +72,7 @@ poetry install
 
 ## Prerequisites
 
-Now that we have the environment setup to run the OpenADRVen agent, we need to setup a local Volttron platform and configure the
+With the environment setup to run the OpenADRVen agent, we need to setup a local Volttron platform and configure the
 remote VTN server that this OpenADRVen agent will connect to.
 
 ## Local Volttron platform setup
@@ -143,8 +141,8 @@ can receive such events from your VTN.
 The community is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
 certificates, follow the instructions below:
 
-Get VEN certificates at https://testcerts.kyrio.com/#/. Store these certificates anywhere on your machine; it is highly
-recommended to put these certificates in a directory called 'secret' that is located at the root level of this repo.
+Get VEN certificates at https://testcerts.kyrio.com/#/. Certificates can be stored anywhere on your machine, however,
+it is recommended to place your keypair files in your ~/.ssh/ folder and make those files read-only.
 
 * IPKeys VTN web browser console: https://eiss2demo.ipkeys.com/ui/home/#/login
 

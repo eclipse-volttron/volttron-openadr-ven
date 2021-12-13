@@ -1,8 +1,8 @@
 {
   "ven_name": "PNNLVEN",
   "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
-  "cert_path": "secret/path_to_cert.pem",
-  "key_path": "secret/path_to_privkey.pem",
+  "cert_path": "~/.ssh/secret/path_to_cert.pem",
+  "key_path": "~/.ssh/secret/path_to_privkey.pem",
   "debug": true,
   "disable_signature": true,
   "vip_address": "tcp://127.0.0.1:22916",

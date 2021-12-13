@@ -35,10 +35,13 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
+import importlib
 import logging
 import asyncio
 import sys
 import os
+from pathlib import Path
+
 import gevent
 import openleadr.enums
 
@@ -60,6 +63,10 @@ from . import (
     Agent
 )
 
+from volttron.client.vip.agent import Agent, Core
+from volttron.client.messaging import topics, headers
+
+from volttron_openadr_ven import volttron_openadr_client
 from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
@@ -80,7 +87,8 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from . volttron_openadr_client import openadr_client_types, OPENLEADR_CLIENT
+from . volttron_openadr_client import openadr_client_type_class_names
+
 
 setup_logging()
 _log = logging.getLogger(__name__)
@@ -100,6 +108,7 @@ class OpenADRVenAgent(Agent):
         self,
         ven_name: str,
         vtn_url: str,
+        openadr_client_type: str,
         debug: bool = False,
         cert: str = None,
         key: str = None,
@@ -109,7 +118,6 @@ class OpenADRVenAgent(Agent):
         ca_file: str = None,
         ven_id: str = None,
         disable_signature: bool = None,
-        openadr_client_type: str = OPENLEADR_CLIENT,
         **kwargs,
     ) -> None:
         """
@@ -170,20 +178,16 @@ class OpenADRVenAgent(Agent):
 
         # instantiate and add handlers to the OpenADR Client
         client_type = config.get(OPENADR_CLIENT_TYPE)
-        try:
-            openadr_client = openadr_client_types[client_type]
-        except KeyError:
-            msg = (
-                f"OpenADR client type not found for: {client_type}. "
-                f"Please ensure that you specify a valid client type for configuration 'openadr_client_type'. "
-                f"Valid client types are: {list(openadr_client_types.keys())}"
-            )
-            _log.debug(msg)
-            raise KeyError(msg)
-
+        class_client_type = openadr_client_type_class_names[client_type]
         _log.info(
-            f"Creating OpenADRClient using OpenADRClient class: {openadr_client}"
+            f"Creating openadr client type: {client_type}, using class: {class_client_type}"
         )
+
+        openadr_client = getattr(
+            importlib.import_module(volttron_openadr_client.__name__),
+            class_client_type,
+        )
+
         self.ven_client = openadr_client(
             config.get(VEN_NAME),
             config.get(VTN_URL),
@@ -378,6 +382,10 @@ def check_required_key(required_key, key_actual):
         raise KeyError(
             f"{AGENT_SECRET} is required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
         )
+    elif required_key == OPENADR_CLIENT_TYPE and not key_actual:
+        raise KeyError(
+            f"{OPENADR_CLIENT_TYPE} is required. Specify one of the following valid client types: {list(openadr_client_type_class_names.keys())}"
+        )
 
 
 def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
@@ -417,19 +425,27 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
 
     # optional configurations
     debug = config.get(DEBUG)
+
+    # keypair paths
     cert = config.get(CERT)
+    if cert:
+        cert = str(Path(cert).expanduser().resolve(strict=True))
     key = config.get(KEY)
+    if key:
+        key = str(Path(key).expanduser().resolve(strict=True))
+
     passphrase = config.get(PASSPHRASE)
     vtn_fingerprint = config.get(VTN_FINGERPRINT)
     show_fingerprint = config.get(SHOW_FINGERPRINT)
     ca_file = config.get(CA_FILE)
     ven_id = config.get(VEN_ID)
     disable_signature = bool(config.get(DISABLE_SIGNATURE))
-    openadr_client_type = config.get(OPENADR_CLIENT_TYPE)
+    openadr_client_type = req_keys_actual[OPENADR_CLIENT_TYPE]
 
     return OpenADRVenAgent(
         req_keys_actual[VEN_NAME],
         req_keys_actual[VTN_URL],
+        openadr_client_type,
         debug=debug,
         cert=cert,
         key=key,
@@ -442,7 +458,6 @@ def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
         identity=IDENTITY,
         # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, remove the input 'address'
         address=remote_url,
-        openadr_client_type=openadr_client_type,
         **kwargs,
     )
 
