@@ -51,22 +51,22 @@ from datetime import timedelta
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr.client import OpenADRClient
 
-from . import (
+from volttron.client.vip.agent import Agent
+from volttron.client.messaging import topics, headers
+
+from volttron_openadr_ven import (
     get_aware_utc_now,
     setup_logging,
     format_timestamp,
     load_config,
     isapipe,
     jsonapi,
-    topics,
-    headers,
-    Agent
 )
 
-from volttron.client.vip.agent import Agent, Core
-from volttron.client.messaging import topics, headers
-
 from volttron_openadr_ven import volttron_openadr_client
+from volttron_openadr_ven.volttron_openadr_client import (
+    openadr_client_type_class_names,
+)
 from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
@@ -87,7 +87,6 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from . volttron_openadr_client import openadr_client_type_class_names
 
 
 setup_logging()
@@ -170,7 +169,7 @@ class OpenADRVenAgent(Agent):
         # initialize all attributes of this class
         self.configure_agent(self.default_config)
 
-    def configure_agent(self, config: dict) -> None:
+    def configure_agent(self, config) -> None:
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
         """
@@ -178,6 +177,7 @@ class OpenADRVenAgent(Agent):
 
         # instantiate and add handlers to the OpenADR Client
         client_type = config.get(OPENADR_CLIENT_TYPE)
+
         class_client_type = openadr_client_type_class_names[client_type]
         _log.info(
             f"Creating openadr client type: {client_type}, using class: {class_client_type}"
