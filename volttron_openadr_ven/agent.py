@@ -40,11 +40,9 @@ import logging
 import asyncio
 import sys
 import os
-from pathlib import Path
-
 import gevent
-import openleadr.enums
 
+from pathlib import Path
 from pprint import pformat
 from datetime import timedelta
 
@@ -60,11 +58,8 @@ from . import (
     jsonapi,
     topics,
     headers,
-    Agent
+    Agent,
 )
-
-from volttron.client.vip.agent import Agent, Core
-from volttron.client.messaging import topics, headers
 
 from volttron_openadr_ven import volttron_openadr_client
 from volttron_openadr_ven.constants import (
@@ -87,7 +82,7 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from . volttron_openadr_client import openadr_client_type_class_names
+from .volttron_openadr_client import openadr_client_type_class_names
 
 
 setup_logging()
@@ -170,7 +165,7 @@ class OpenADRVenAgent(Agent):
         # initialize all attributes of this class
         self.configure_agent(self.default_config)
 
-    def configure_agent(self, config: dict) -> None:
+    def configure_agent(self, config) -> None:
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
         """
@@ -237,7 +232,7 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Servicing VTN Requests ********************
 
-    async def handle_event(self, event: dict) -> openleadr.enums.OPT:
+    async def handle_event(self, event: dict) -> OPT:
         """
         Publish event to the Volttron message bus. Return OPT response.
         This coroutine will be called when there is an event to be handled.
