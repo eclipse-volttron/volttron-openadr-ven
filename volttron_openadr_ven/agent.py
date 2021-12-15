@@ -227,7 +227,7 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Servicing VTN Requests ********************
 
-    async def handle_event(self, event: dict) -> OPT:
+    async def handle_event(self, event) -> OPT:
         """
         Publish event to the Volttron message bus. Return OPT response.
         This coroutine will be called when there is an event to be handled.
@@ -256,7 +256,7 @@ class OpenADRVenAgent(Agent):
         """
         try:
             _log.debug("Received event. Processing event now...")
-            signal = event.get("event_signals")[0]  # type: ignore[index]
+            signal = event.get("event_signals")[0]
             _log.info(f"Event signal:\n {pformat(signal)}")
         except IndexError as e:
             _log.debug(

@@ -14,7 +14,7 @@ correct configuration with optional parameters added.
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
-        "openadr_client_type": "ipkeys" # for a list of valid client types see 'openadr_client_types' dictionary in ~volttron_openadr_ven/volttron_openadr_client.py
+        "openadr_client_type": "IPKeysClient" # the list of valid client types are the class names of the OpenADRClient subclasses in ~volttron_openadr_ven/volttron_openadr_client.py
 
         # below are optional parameters
 
@@ -35,14 +35,48 @@ An example of such a configuration is saved in the root of this repository; the 
 
 # Quickstart
 
-## Prerequisites
+## Installing the agent on Monolith Volttron
+
+1. Start the Volttron platform on your machine
+
+```shell
+volttron -vv -l volttron.log &
+```
+
+2. Tail the logs so you can observe OpenADRClient logs
+
+```shell
+tail -f volttron.log
+```
+
+3. Install the agent on Volttron
+
+```shell
+vctl -v install <path to root directory of volttron-openadr-ven> \
+--tag openadr \
+--agent-config <path to agent config>
+```
+
+4. Verify status of agent
+```shell
+vctl status
+```
+
+5.  Start the agent
+```shell
+vctl start --tag openadr
+```
+
+## Starting the agent on Modular Volttron
+
+
+### Prerequisites
 
 * Python >=3.7
 * Pip >=20.1
 * Poetry >=1.16
 
-
-## Environment setup
+### 1. Environment setup
 
 Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
 To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
@@ -68,18 +102,11 @@ poetry shell
 poetry install
 ```
 
-# Installing the agent on Monolith Volttron
 
-
-
-# Starting the agent
-
-## Prerequisites
-
-With the environment setup to run the OpenADRVen agent, we need to setup a local Volttron platform and configure the
+The environment is now setup to run the OpenADRVen agent. Next, we need to set up a local Volttron platform and configure the
 remote VTN server that this OpenADRVen agent will connect to.
 
-## Local Volttron platform setup
+### 2. Local Volttron platform setup
 
 We need to start a local Volttron platform on the same machine that is hosting this OpenADRVen agent. Follow the [installation steps](https://volttron.readthedocs.io/en/develop/introduction/platform-install.html)
 for installing a single instance of the Volttron platform. After you have installed and started the Volttron platform, we need
@@ -134,13 +161,13 @@ An example of the command being run is shown below:
 $ vctl auth add --credentials 'csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4'
 ```
 
-## VTN Server setup
+### 3. VTN Server setup
 
 Depending on the type of VTN that you are using, you need to configure your VTN to send events so that the OpenADRVen agent
 can receive such events from your VTN.
 
 
-### IPKeys VTN configuration
+#### IPKeys VTN configuration
 
 The community is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
 certificates, follow the instructions below:
@@ -155,7 +182,7 @@ To create an event, click "Events" tab. Then click the "+" icon to create an eve
 
 ![Alt text](screenshots/test_event_screenshot_ipkeys.png?raw=true "Screenshot of Events page of IPKeys GUI")
 
-## Starting the OpenADRVen agent
+### 4. Starting the OpenADRVen agent
 
 Now that we have both the environment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,
 we can finally run our OpenADRVen agent. Note: we are NOT installing this agent on the local Volttron platform. We will
@@ -164,7 +191,7 @@ module with the path to the agent configuration file that you created as noted i
 
 
 ```shell
-poetry run python volttron_openadr_ven/agent.py <path to the config file>
+poetry run python -m volttron_openadr_ven.agent <path to the config file>
 ```
 
 
