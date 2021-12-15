@@ -83,7 +83,7 @@ from volttron_openadr_ven.constants import (
 from .volttron_openadr_client import openadr_clients
 
 
-setup_logging(level=logging.INFO)
+setup_logging()
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -133,7 +133,7 @@ class OpenADRVenAgent(Agent):
                                     certificate.
                 str ven_id: The ID for this VEN. If you leave this blank, a VEN_ID will be assigned by the VTN.
                 bool disable_signature: Whether to disable digital signatures
-                str openadr_client_type: The type of openadr client to use. Valid client types are defined in 'openadr_client_types' from ~/volttron_openadr_ven/volttron_openadr_client.py
+                str openadr_client_type: The type of openadr client to use. Valid client types are the openadr client class names in ~/volttron_openadr_ven/volttron_openadr_client.py
                 """
         super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
 
