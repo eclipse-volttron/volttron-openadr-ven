@@ -3,7 +3,7 @@ import asyncio
 
 from pprint import pformat
 from openleadr.enums import OPT
-from volttron_openadr_ven.volttron_openadr_client import IPKeysVTNOpenADRClient
+from volttron_openadr_ven.volttron_openadr_client import IPKeysClient
 from volttron_openadr_ven.constants import (
     VEN_NAME,
     VTN_URL,
@@ -35,7 +35,7 @@ config = {
 }
 
 
-ven = IPKeysVTNOpenADRClient(
+ven = IPKeysClient(
     ven_name=config[VEN_NAME],
     vtn_url=config[VTN_URL],
     debug=True,

@@ -1,6 +1,7 @@
 import logging
 import asyncio
 
+from abc import ABC
 from functools import partial
 from lxml import etree
 
@@ -9,7 +10,11 @@ from openleadr.preflight import preflight_message
 from openleadr.messaging import TEMPLATES, SIGNER, _create_replay_protect
 from openleadr import utils, enums
 
-logger = logging.getLogger("volttron_openleadr")
+from . import setup_logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
 
 """
 The VolttronOpenADR VEN agent uses the python library OpenLEADR https://github.com/openleadr/openleadr-python to create
@@ -18,18 +23,17 @@ to connect to any implementation of and OpenADR VTN. For example, to connect to 
 on an old OpenADR protocol, the IPKeysDemoVTNOpenADRClient is created so that it can successfully connect to an IPKeys VTN.
 
 If you have a specific VTN that you want to connect to and require further customization of the VEN client, create your
-own OpenADRClient by extending the base class VolttronOpenADRClientBase, updating your client with your business logic,
-and then adding that client to the dictionary: openadr_client_types.
+own OpenADRClient by extending the base class VolttronOpenADRClientBase, updating your client with your business logic, and putting that subclass in this module
 """
 
 
-class VolttronOpenADRClientBase(OpenADRClient):
+class OpenADRClientBase(OpenADRClient, ABC):
     def __init__(self, ven_name, vtn_url, disable_signature=False, **kwargs):
         super().__init__(ven_name, vtn_url, **kwargs)
         self.disable_signature = disable_signature
 
 
-class IPKeysVTNOpenADRClient(VolttronOpenADRClientBase):
+class IPKeysClient(OpenADRClientBase, ABC):
     def __init__(self, ven_name, vtn_url, disable_signature, **kwargs):
         super().__init__(ven_name, vtn_url, disable_signature, **kwargs)
 
@@ -189,9 +193,14 @@ class IPKeysVTNOpenADRClient(VolttronOpenADRClientBase):
         return msg
 
 
-IPKEYS_CLIENT = "ipkeys"
-OPENLEADR_CLIENT = "openleadr"
-openadr_client_type_class_names = {
-    IPKEYS_CLIENT: IPKeysVTNOpenADRClient.__name__,
-    OPENLEADR_CLIENT: VolttronOpenADRClientBase.__name__,
-}
+def openadr_clients():
+    clients = {}
+    work = [OpenADRClient]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            child_name = child.__name__
+            if child_name not in clients:
+                clients[child_name] = child
+                work.append(child)
+    return clients

@@ -35,7 +35,6 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
-import importlib
 import logging
 import asyncio
 import sys
@@ -61,7 +60,6 @@ from . import (
     Agent,
 )
 
-from volttron_openadr_ven import volttron_openadr_client
 from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
@@ -82,10 +80,10 @@ from volttron_openadr_ven.constants import (
     OPENADR_CLIENT_TYPE,
     IDENTITY,
 )
-from .volttron_openadr_client import openadr_client_type_class_names
+from .volttron_openadr_client import openadr_clients
 
 
-setup_logging()
+setup_logging(level=logging.INFO)
 _log = logging.getLogger(__name__)
 __version__ = "1.0"
 
@@ -173,17 +171,14 @@ class OpenADRVenAgent(Agent):
 
         # instantiate and add handlers to the OpenADR Client
         client_type = config.get(OPENADR_CLIENT_TYPE)
-        class_client_type = openadr_client_type_class_names[client_type]
-        _log.info(
-            f"Creating openadr client type: {client_type}, using class: {class_client_type}"
-        )
+        openADRClient = openadr_clients().get(client_type)
+        if openADRClient is None:
+            msg = f"Invalid client type: {client_type}. Please use valid client types: {list(openadr_clients().keys())}"
+            _log.debug(msg)
+            raise KeyError(msg)
 
-        openadr_client = getattr(
-            importlib.import_module(volttron_openadr_client.__name__),
-            class_client_type,
-        )
-
-        self.ven_client = openadr_client(
+        _log.info(f"Creating OpenADRClient type: {client_type}...")
+        self.ven_client = openADRClient(
             config.get(VEN_NAME),
             config.get(VTN_URL),
             debug=config.get(DEBUG),
@@ -196,10 +191,10 @@ class OpenADRVenAgent(Agent):
             ven_id=config.get(VEN_ID),
             disable_signature=config.get(DISABLE_SIGNATURE),
         )
-        _log.info("OpenADRClient successfully created.")
+        _log.info(f"{client_type} successfully created.")
 
         _log.info(
-            "Adding capabilities (e.g. handlers, reports) to OpenADRClient..."
+            f"Adding capabilities (e.g. handlers, reports) to {client_type}..."
         )
         # Add event handling capability to the client
         # if you want to add more handlers on a specific event, you must create a coroutine in this class
@@ -379,7 +374,7 @@ def check_required_key(required_key, key_actual):
         )
     elif required_key == OPENADR_CLIENT_TYPE and not key_actual:
         raise KeyError(
-            f"{OPENADR_CLIENT_TYPE} is required. Specify one of the following valid client types: {list(openadr_client_type_class_names.keys())}"
+            f"{OPENADR_CLIENT_TYPE} is required. Specify one of the following valid client types: {list(openadr_clients().keys())}"
         )
 
 
