@@ -12,18 +12,22 @@ correct configuration with optional parameters added.
 
 ```jsonpath
     {
+        # required configurations
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
         "openadr_client_type": "IPKeysClient" # the list of valid client types are the class names of the OpenADRClient subclasses in ~volttron_openadr_ven/volttron_openadr_client.py
+        "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI",
+        "agent_public": "csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4",
+        "agent_secret": "4rv_l3oEzgmRxbPkGma2-tMhfPu47yyhi48ygF5hVQY",
 
-        # below are optional parameters
+        # below are optional configurations
 
         # if you want/need to sign outgoing messages using a public-private key pair, provide the relative path to the cert_path and key_path
         # in this example, the keypair is stored in the directory named '~/.ssh/secret'
         "cert_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_cert.pem",
         "key_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_privkey.pem",
 
-        # other optional parameters
+        # other optional configurations
         "debug": true,
         "disable_signature": true
     }
@@ -35,87 +39,17 @@ An example of such a configuration is saved in the root of this repository; the 
 
 # Quickstart
 
-## Installing the agent on Monolith Volttron
+## Prerequisites
 
-1. Start the Volttron platform on your machine
+### Configuring the agent's server key and keypair
 
-```shell
-volttron -vv -l volttron.log &
-```
-
-2. Tail the logs so you can observe OpenADRClient logs
-
-```shell
-tail -f volttron.log
-```
-
-3. Install the agent on Volttron
-
-```shell
-vctl -v install <path to root directory of volttron-openadr-ven> \
---tag openadr \
---agent-config <path to agent config>
-```
-
-4. Verify status of agent
-```shell
-vctl status
-```
-
-5.  Start the agent
-```shell
-vctl start --tag openadr
-```
-
-## Starting the agent on Modular Volttron
-
-
-### Prerequisites
-
-* Python >=3.7
-* Pip >=20.1
-* Poetry >=1.16
-
-### 1. Environment setup
-
-Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
-To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
-
-1. Create virtual environment
-
-By default, poetry creates a virtual environment in {cache-dir}/virtualenvs
-({cache-dir}\virtualenvs on Windows). To configure 'poetry' to create the virtualenv inside this project's root
-directory, run the following command:
-
-[```poetry config virtualenvs.in-project true```](https://python-poetry.org/docs/configuration
-)
-
-Then to create the virtual environment itself, run the following command:
-
-```shell
-poetry shell
-```
-
-2. Install requirements
-
-```shell
-poetry install
-```
-
-
-The environment is now setup to run the OpenADRVen agent. Next, we need to set up a local Volttron platform and configure the
-remote VTN server that this OpenADRVen agent will connect to.
-
-### 2. Local Volttron platform setup
-
-We need to start a local Volttron platform on the same machine that is hosting this OpenADRVen agent. Follow the [installation steps](https://volttron.readthedocs.io/en/develop/introduction/platform-install.html)
-for installing a single instance of the Volttron platform. After you have installed and started the Volttron platform, we need
-to get the platform's server key and create a public and secret keys. We will use these keys to configure the credentials of the
-OpenADRVen agent so that the local Volttron platform can successfully authenticate the OpenADRVen agent.
+To successfully install this agent on a volttron platform, we need to get the platform's server key and have the platform create a keypair; the server key
+and keypair will be used as the values for "server_key", "agent_public", and "agent_secret". These keys are needed so that the local Volttron platform
+can successfully authenticate the OpenADRVen agent. If these configurations are not filled out with the right values, the agent will fail to start.
 
 **Steps**
 
-1. With the local Volttron platform running, open a new shell and run `vctl auth serverkey`. Copy and paste output in the agent's config file. See example below:
+1. Ensure that the Volttron platform running. Open a new shell and run `vctl auth serverkey`. Copy and paste the output from that command as the value for "server_key" in the agent's config file. See example below:
 
 ```shell
 $ vctl auth serverkey
@@ -132,7 +66,7 @@ FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI
 }
 ```
 
-2. On the same shell, run `vctl auth keypair`. Copy the values of `public` and `secret` and paste them in the agent's config file. See example below:
+2. On the same shell, run `vctl auth keypair`. Copy the values of `public` and `secret` and paste them in the agent's config file as the values for "public" and "secret". See example below:
 
 ```shell
 $ vctl auth keypair
@@ -161,7 +95,8 @@ An example of the command being run is shown below:
 $ vctl auth add --credentials 'csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4'
 ```
 
-### 3. VTN Server setup
+
+### VTN Server setup
 
 Depending on the type of VTN that you are using, you need to configure your VTN to send events so that the OpenADRVen agent
 can receive such events from your VTN.
@@ -182,20 +117,84 @@ To create an event, click "Events" tab. Then click the "+" icon to create an eve
 
 ![Alt text](screenshots/test_event_screenshot_ipkeys.png?raw=true "Screenshot of Events page of IPKeys GUI")
 
-### 4. Starting the OpenADRVen agent
 
-Now that we have both the environment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,
-we can finally run our OpenADRVen agent. Note: we are NOT installing this agent on the local Volttron platform. We will
-simply run this agent on the host machine. Navigate to the root level of this repo. Then run the ~/volttron_openadr_ven/agent.py
-module with the path to the agent configuration file that you created as noted in the "Agent Configuration" section at the beginning of this README.
+## Installing the agent on Volttron 8.x
 
+1. Start the Volttron platform on your machine.
 
 ```shell
-poetry run python -m volttron_openadr_ven.agent <path to the config file>
+volttron -vv -l volttron.log &
 ```
+
+2. Tail the logs so that you can observe the logs coming from the Volttron OpenADR VEN agent.
+
+```shell
+tail -f volttron.log
+```
+
+3. Install the agent on Volttron.
+
+```shell
+vctl install <path to root directory of volttron-openadr-ven> \
+--tag openadr \
+--agent-config <path to agent config>
+```
+
+4. Verify status of agent.
+
+```shell
+vctl status
+```
+
+5.  Start the agent.
+```shell
+vctl start --tag openadr
+```
+
+## Installing the agent on Modular Volttron
+
+1. Install the volttron server.
+
+```shell
+pip install volttron-server
+```
+
+2. Follow the same installation steps in the **Installing the agent on Volttron 8.x** section above.
 
 
 # Development, Code Quality, and Standardization
+
+### Prerequisites
+
+* Python >=3.7
+* Pip >=20.1
+* Poetry >=1.16
+
+## Environment setup
+
+Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
+To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
+
+1. Create virtual environment
+
+By default, poetry creates a virtual environment in {cache-dir}/virtualenvs
+({cache-dir}\virtualenvs on Windows). To configure 'poetry' to create the virtualenv inside this project's root
+directory, run the following command:
+
+[```poetry config virtualenvs.in-project true```](https://python-poetry.org/docs/configuration
+)
+
+Then to create the virtual environment itself, run the following command:
+
+```shell
+poetry shell
+```
+
+2. Install requirements
+
+```shell
+poetry install
+```
 
 ## OpenLeadr Notes (IMPORTANT)
 
