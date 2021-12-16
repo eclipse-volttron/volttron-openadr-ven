@@ -1,0 +1,13 @@
+{
+  "ven_name": "PNNLVEN",
+  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+  "cert_path": "~/.ssh/secret/path_to_cert.pem",
+  "key_path": "~/.ssh/secret/path_to_privkey.pem",
+  "debug": true,
+  "disable_signature": true,
+  "vip_address": "tcp://127.0.0.1:22916",
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI",
+  "agent_public": "csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4",
+  "agent_secret": "4rv_l3oEzgmRxbPkGma2-tMhfPu47yyhi48ygF5hVQY",
+  "openadr_client_type": "IPKeysClient"
+}

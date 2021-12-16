@@ -14,15 +14,14 @@ correct configuration with optional parameters added.
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+        "openadr_client_type": "IPKeysClient" # the list of valid client types are the class names of the OpenADRClient subclasses in ~volttron_openadr_ven/volttron_openadr_client.py
 
         # below are optional parameters
 
-        # if you want/need to sign outgoing messages using a public-private key pair, you need to add a directory named "secret" in the top level
-        # of this repo; then provide the relative path to the cert and key
-        # below is an example
-        # test certificates for IP Keys VTN's can be obtained at https://testcerts.kyrio.com/#/
-        "cert": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_cert.pem",
-        "key": "secret/TEST_RSA_VEN_210923215148_certs/TEST_RSA_VEN_210923215148_privkey.pem",
+        # if you want/need to sign outgoing messages using a public-private key pair, provide the relative path to the cert_path and key_path
+        # in this example, the keypair is stored in the directory named '~/.ssh/secret'
+        "cert_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_cert.pem",
+        "key_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_privkey.pem",
 
         # other optional parameters
         "debug": true,
@@ -30,31 +29,57 @@ correct configuration with optional parameters added.
     }
 ```
 
-## Volttron integration
+Save this configuration in a JSON file in your preferred location; we recommend saving it in the `volttron_openadr_ven` directory.
+An example of such a configuration is saved in the root of this repository; the file is named `config_example1.json`
 
-To ensure that this agent is created within the Volttron framework, ensure that you set the following environmental variable
-to the absolute path of the configuration JSON file for this agent. For example, on Linux, use the following example to set
-the environmental variable AGENT_CONFIG to a path to your JSON config file:
 
-`export AGENT_CONFIG /home/usr/path-to-my-config-file`
+# Quickstart
 
-# Development
+## Installing the agent on Monolith Volttron
 
-## Prerequisites
+1. Start the Volttron platform on your machine
+
+```shell
+volttron -vv -l volttron.log &
+```
+
+2. Tail the logs so you can observe OpenADRClient logs
+
+```shell
+tail -f volttron.log
+```
+
+3. Install the agent on Volttron
+
+```shell
+vctl -v install <path to root directory of volttron-openadr-ven> \
+--tag openadr \
+--agent-config <path to agent config>
+```
+
+4. Verify status of agent
+```shell
+vctl status
+```
+
+5.  Start the agent
+```shell
+vctl start --tag openadr
+```
+
+## Starting the agent on Modular Volttron
+
+
+### Prerequisites
 
 * Python >=3.7
 * Pip >=20.1
 * Poetry >=1.16
 
-
-## Environment setup
+### 1. Environment setup
 
 Note: This repo uses [Poetry](https://python-poetry.org/), a dependency management and packaging tool for Python. If you don't have Poetry installed on your machine, follow [these steps](https://python-poetry.org/docs/#installation) to install it on your machine.
 To check if Poetry is installed, run `poetry --version`. If you receive the error 'command not found: poetry', add the following line to your '~/.bashrc' script: ```export PATH=$PATH:$HOME/.poetry/bin```.
-
-0. Install the required submodules
-
-```git submodule update --init --recursive```
 
 1. Create virtual environment
 
@@ -71,11 +96,6 @@ Then to create the virtual environment itself, run the following command:
 poetry shell
 ```
 
-NOTE: Poetry needs the command 'python' in order to create a new shell. On Linux, if you only have python3 installed, run the following to link 'python' to 'python3':
-```shell
-sudo apt install python-is-python3
-```
-
 2. Install requirements
 
 ```shell
@@ -83,7 +103,109 @@ poetry install
 ```
 
 
-## Code Quality and Standardization
+The environment is now setup to run the OpenADRVen agent. Next, we need to set up a local Volttron platform and configure the
+remote VTN server that this OpenADRVen agent will connect to.
+
+### 2. Local Volttron platform setup
+
+We need to start a local Volttron platform on the same machine that is hosting this OpenADRVen agent. Follow the [installation steps](https://volttron.readthedocs.io/en/develop/introduction/platform-install.html)
+for installing a single instance of the Volttron platform. After you have installed and started the Volttron platform, we need
+to get the platform's server key and create a public and secret keys. We will use these keys to configure the credentials of the
+OpenADRVen agent so that the local Volttron platform can successfully authenticate the OpenADRVen agent.
+
+**Steps**
+
+1. With the local Volttron platform running, open a new shell and run `vctl auth serverkey`. Copy and paste output in the agent's config file. See example below:
+
+```shell
+$ vctl auth serverkey
+FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI
+
+# Paste the output in config file for agent
+
+{
+  {
+  "ven_name": "PNNLVEN",
+  ...
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI"
+  }
+}
+```
+
+2. On the same shell, run `vctl auth keypair`. Copy the values of `public` and `secret` and paste them in the agent's config file. See example below:
+
+```shell
+$ vctl auth keypair
+{
+  "public": "dyMf8g58ptiQTqI7EHbNr7PPFsAr2y-OIy1J-he_DCU",
+  "secret": "iJa4mlZBomb3bDP8oRAN4IK8uXEqpl1MDg_te3aJzMo"
+}
+
+# Paste the output in config file for agent
+
+{
+  {
+  "ven_name": "PNNLVEN",
+  ...
+  "server_key": "FDIH6OBg0m3L2T6Jv_zUuQlSxYdgvTD3QOEye-vM-iI",
+  "agent_public": "csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4",
+  "agent_secret": "4rv_l3oEzgmRxbPkGma2-tMhfPu47yyhi48ygF5hVQY"
+  }
+}
+```
+
+3. Add the public key, which was generated in the previous step, to the Volttron platform. Use `vctl auth add --credentials <public key>'.
+An example of the command being run is shown below:
+
+```shell
+$ vctl auth add --credentials 'csJBQqQDZ-pP_8E9FIgM9hvkAak6HriLkIQhP46ZFl4'
+```
+
+### 3. VTN Server setup
+
+Depending on the type of VTN that you are using, you need to configure your VTN to send events so that the OpenADRVen agent
+can receive such events from your VTN.
+
+
+#### IPKeys VTN configuration
+
+The community is currently testing this OpenADRVen agent against a IPKeys VTN. To configure the agent with the right
+certificates, follow the instructions below:
+
+Get VEN certificates at https://testcerts.kyrio.com/#/. Certificates can be stored anywhere on your machine, however,
+it is recommended to place your keypair files in your ~/.ssh/ folder and make those files read-only.
+
+* IPKeys VTN web browser console: https://eiss2demo.ipkeys.com/ui/home/#/login
+
+To create an event, click "Events" tab. Then click the "+" icon to create an event. Use the template "PNNLTestEvent" or
+"PNNLnontestevent" to create an event.
+
+![Alt text](screenshots/test_event_screenshot_ipkeys.png?raw=true "Screenshot of Events page of IPKeys GUI")
+
+### 4. Starting the OpenADRVen agent
+
+Now that we have both the environment for OpenADRVen agent setup and the Volttron platform and VTN's configured properly,
+we can finally run our OpenADRVen agent. Note: we are NOT installing this agent on the local Volttron platform. We will
+simply run this agent on the host machine. Navigate to the root level of this repo. Then run the ~/volttron_openadr_ven/agent.py
+module with the path to the agent configuration file that you created as noted in the "Agent Configuration" section at the beginning of this README.
+
+
+```shell
+poetry run python -m volttron_openadr_ven.agent <path to the config file>
+```
+
+
+# Development, Code Quality, and Standardization
+
+## OpenLeadr Notes (IMPORTANT)
+
+The OpenADRVen agent uses a third-party library, OpenLeader[https://openleadr.org/docs/index.html], as the actual client.
+However, the OpenADRVen agent had to modify some parts of that client in order to connect to the IPKeys VTN for testing. Specifically,
+OpenADRVen agent extends the OpenLeadr client class and overrides some class methods.
+
+Those parts that were modified are located in ~/volttron_openadr_ven/volttron_openleadr.py. Future releases of OpenLeadr could potentially and adversely
+affect OpenADRVen agent if those releases directly or indirectly affect the modified code blocks. Thus, maintenance of this agent should closely monitor future changes to OpenLeadr.
+
 
 ## Git Hooks and Pre-commit
 
@@ -119,44 +241,3 @@ This repo uses [MyPy](https://mypy.readthedocs.io/en/stable/), a static type che
 ```shell
 mypy <path to file>
 ```
-
-# CI/CD
-
-TODO:
-
-# Building Wheel and Publishing to PyPi
-
-TODO:
-
-Build wheel
-```python setup.py -q sdist bdist_wheel```
-
-Check wheel
-```check-wheel-contents dist/*.whl```
-```tar tzf <>```
-
-Test uploading
-```twine upload --repository-url https://test.pypi.org/legacy/ dist/*```
-
-Upload to PyPi
-```python -m twin upload dist/*```
-
-
-# Testing
-
-## Ven Certificates
-
-https://testcerts.kyrio.com/#/
-
-## Test VTN's
-
-* IPKeys: https://eiss2demo.ipkeys.com/ui/home/#/login
-
-# Other
-
-## Installing dependencies behind a proxy
-
-If running this behind a PNNL VPN, run the following so Poetry can install all the dependencies:
-See: https://leifengblog.net/blog/how-to-use-pip-behind-a-proxy/
-
-```export https_proxy=http://proxy01.pnl.gov:3128```
