@@ -38,7 +38,6 @@
 import logging
 import asyncio
 import sys
-import os
 import gevent
 
 from pathlib import Path
@@ -53,21 +52,17 @@ from . import (
     setup_logging,
     format_timestamp,
     load_config,
-    isapipe,
     jsonapi,
     topics,
     headers,
     Agent,
+    vip_main,
 )
 
 from volttron_openadr_ven.constants import (
     REQUIRED_KEYS,
     VEN_NAME,
     VTN_URL,
-    VIP_ADDRESS,
-    SERVER_KEY,
-    AGENT_PUBLIC,
-    AGENT_SECRET,
     DEBUG,
     CERT,
     KEY,
@@ -97,62 +92,10 @@ class OpenADRVenAgent(Agent):
     This agent creates an instance of OpenLEADR's VEN client, which is used to communicated with a VTN.
     """
 
-    def __init__(
-        self,
-        ven_name: str,
-        vtn_url: str,
-        openadr_client_type: str,
-        debug: bool = False,
-        cert: str = None,
-        key: str = None,
-        passphrase: str = None,
-        vtn_fingerprint: str = None,
-        show_fingerprint: str = None,
-        ca_file: str = None,
-        ven_id: str = None,
-        disable_signature: bool = None,
-        **kwargs,
-    ) -> None:
-        """
-                Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
-                Configuration parameters (see config for a sample config file):
-
-                str ven_name: The name for this VEN
-                str vtn_url: The URL of the VTN (Server) to connect to
-                bool debug: Whether or not to print debugging messages
-                str cert: The path to a PEM-formatted Certificate file to use
-                                 for signing messages.
-                str key: The path to a PEM-formatted Private Key file to use
-                                for signing messages.
-                str passphrase: The passphrase for the Private Key
-                str vtn_fingerprint: The fingerprint for the VTN's certificate to
-                                        verify incomnig messages
-                str show_fingerprint: Whether to print your own fingerprint
-                                             on startup. Defaults to True.
-                str ca_file: The path to the PEM-formatted CA file for validating the VTN server's
-                                    certificate.
-                str ven_id: The ID for this VEN. If you leave this blank, a VEN_ID will be assigned by the VTN.
-                bool disable_signature: Whether to disable digital signatures
-                str openadr_client_type: The type of openadr client to use. Valid client types are the openadr client class names in ~/volttron_openadr_ven/volttron_openadr_client.py
-                """
+    def __init__(self, config_path, **kwargs) -> None:
         super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
 
-        # client will be initialized in configure_agent()
-        self.ven_client: OpenADRClient
-        self.default_config = {
-            VEN_NAME: ven_name,
-            VTN_URL: vtn_url,
-            DEBUG: debug,
-            CERT: cert,
-            KEY: key,
-            PASSPHRASE: passphrase,
-            VTN_FINGERPRINT: vtn_fingerprint,
-            SHOW_FINGERPRINT: show_fingerprint,
-            CA_FILE: ca_file,
-            VEN_ID: ven_id,
-            DISABLE_SIGNATURE: disable_signature,
-            OPENADR_CLIENT_TYPE: openadr_client_type,
-        }
+        self.default_config = OpenADRVenAgent.parse_config(config_path)
 
         # SubSystem/ConfigStore
         self.vip.config.set_default("config", self.default_config)
@@ -160,16 +103,17 @@ class OpenADRVenAgent(Agent):
             self._configure, actions=["NEW", "UPDATE"], pattern="config"
         )
 
-        # initialize all attributes of this class
-        self.configure_agent(self.default_config)
+        self.ven_client: OpenADRClient
+        # configure the VEN client with default_config
+        self.configure_ven_client(self.default_config)
 
-    def configure_agent(self, config) -> None:
+    def configure_ven_client(self, config) -> None:
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
         """
         _log.info(f"Configuring agent with: \n {pformat(config)} ")
 
-        # instantiate and add handlers to the OpenADR Client
+        # instantiate VEN client
         client_type = config.get(OPENADR_CLIENT_TYPE)
         openADRClient = openadr_clients().get(client_type)
         if openADRClient is None:
@@ -217,7 +161,7 @@ class OpenADRVenAgent(Agent):
         """The agent's config may have changed. Re-initialize it."""
         config = self.default_config.copy()
         config.update(contents)
-        self.configure_agent(config)
+        self.configure_ven_client(config)
 
     def start_asyncio_loop(self):
         _log.info("Starting agent...")
@@ -293,13 +237,14 @@ class OpenADRVenAgent(Agent):
             peer="pubsub",
             topic=f"{topics.OPENADR_EVENT}/{self.ven_client.ven_name}",
             headers={headers.TIMESTAMP: format_timestamp(get_aware_utc_now())},
-            message=self._json_object(event),
+            message=OpenADRVenAgent.to_json_object(event),
         )
 
         return
 
     # ***************** Helper methods ********************
-    def _json_object(self, obj: dict):
+    @staticmethod
+    def to_json_object(obj: dict):
         """Ensure that an object is valid JSON by dumping it with json_converter and then reloading it."""
         obj_string = jsonapi.dumps(
             obj,
@@ -309,147 +254,101 @@ class OpenADRVenAgent(Agent):
         )
         return jsonapi.loads(obj_string)
 
+    @staticmethod
+    def parse_config(config_path):
+        """Parse the OpenADR agent's configuration file.
+        str config_path: The path to the agent configuration file
+
+        The configuration file must have the following required properties:
+
+          str ven_name: The name for this VEN
+          str vtn_url: The URL of the VTN (Server) to connect to
+          str openadr_client_type: The type of openadr client to use. Valid client types are the openadr client class names in ~/volttron_openadr_ven/volttron_openadr_client.py
+
+        The configuration file can have the following optional properties:
+
+          bool debug: Whether to print debugging messages
+          str cert: The path to a PEM-formatted Certificate file to use for signing messages.
+          str key: The path to a PEM-formatted Private Key file to use for signing messages.
+          str passphrase: The passphrase for the Private Key
+          str vtn_fingerprint: The fingerprint for the VTN's certificate to verify incoming messages
+          bool show_fingerprint: Whether to print your own fingerprint on startup. Defaults to True.
+          str ca_file: The path to the PEM-formatted CA file for validating the VTN server's certificate.
+          str ven_id: The ID for this VEN. If you leave this blank, a VEN_ID will be assigned by the VTN.
+          bool disable_signature: Whether to disable digital signatures. Defaults to False.
+        """
+        try:
+            config = load_config(config_path)
+        except NameError as err:
+            _log.exception(err)
+            raise
+        except Exception as err:
+            _log.error("Error loading configuration: {}".format(err))
+            config = {}
+
+        if not config:
+            raise Exception("Configuration cannot be empty.")
+
+        req_keys_actual = {k: "" for k in REQUIRED_KEYS}
+        for required_key in REQUIRED_KEYS:
+            key_actual = config.get(required_key)
+            OpenADRVenAgent.check_required_key(required_key, key_actual)
+            req_keys_actual[required_key] = key_actual
+
+            # optional configurations
+        debug = config.get(DEBUG)
+
+        # keypair paths
+        cert = config.get(CERT)
+        if cert:
+            cert = str(Path(cert).expanduser().resolve(strict=True))
+        key = config.get(KEY)
+        if key:
+            key = str(Path(key).expanduser().resolve(strict=True))
+
+        ven_name = config.get(VEN_NAME)
+        vtn_url = config.get(VTN_URL)
+        passphrase = config.get(PASSPHRASE)
+        vtn_fingerprint = config.get(VTN_FINGERPRINT)
+        show_fingerprint = bool(config.get(SHOW_FINGERPRINT))
+        ca_file = config.get(CA_FILE)
+        ven_id = config.get(VEN_ID)
+        disable_signature = bool(config.get(DISABLE_SIGNATURE))
+        openadr_client_type = config.get(OPENADR_CLIENT_TYPE)
+
+        return {
+            VEN_NAME: ven_name,
+            VTN_URL: vtn_url,
+            DEBUG: debug,
+            CERT: cert,
+            KEY: key,
+            PASSPHRASE: passphrase,
+            VTN_FINGERPRINT: vtn_fingerprint,
+            SHOW_FINGERPRINT: show_fingerprint,
+            CA_FILE: ca_file,
+            VEN_ID: ven_id,
+            DISABLE_SIGNATURE: disable_signature,
+            OPENADR_CLIENT_TYPE: openadr_client_type,
+        }
+
+    @staticmethod
+    def check_required_key(required_key, key_actual):
+        if required_key == VEN_NAME and not key_actual:
+            raise KeyError(f"{VEN_NAME} is required.")
+        elif required_key == VTN_URL and not key_actual:
+            raise KeyError(
+                f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
+            )
+        elif required_key == OPENADR_CLIENT_TYPE and not key_actual:
+            raise KeyError(
+                f"{OPENADR_CLIENT_TYPE} is required. Specify one of the following valid client types: {list(openadr_clients().keys())}"
+            )
+        return
+
 
 def main():
     """Main method called to start the agent."""
-    # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, uncomment the line below and remove vip_main_tmp
-    # vip_main(ven_agent, version=__version__)
-    vip_main_tmp()
-
-
-def vip_main_tmp():
-    config_path = os.environ.get("AGENT_CONFIG")
-    if not config_path:
-        # this function borrows code from volttron.utils.commands.vip_main
-        # it allows the user of this agent to set the certificates so that the remote volttron platform can authenticate this agent
-        import argparse
-
-        # Instantiate the parser
-        parser = argparse.ArgumentParser()
-        parser.add_argument("config_path")
-        args = parser.parse_args()
-        config_path = args.config_path
-
-    if isapipe(sys.stdout):
-        # Hold a reference to the previous file object so it doesn't
-        # get garbage collected and close the underlying descriptor.
-        stdout = sys.stdout
-        sys.stdout = os.fdopen(stdout.fileno(), "w", 1)
-
-    agent = ven_agent(config_path)
-
-    try:
-        run = agent.run
-    except AttributeError:
-        run = agent.core.run
-    task = gevent.spawn(run)
-    try:
-        task.join()
-    finally:
-        task.kill()
-
-
-def check_required_key(required_key, key_actual):
-    if required_key == VEN_NAME and not key_actual:
-        raise KeyError(f"{VEN_NAME} is required.")
-    elif required_key == VTN_URL and not key_actual:
-        raise KeyError(
-            f"{VTN_URL} is required. Ensure {VTN_URL} is given a URL to the VTN."
-        )
-    elif required_key == VIP_ADDRESS and not key_actual:
-        raise KeyError(
-            f"{VIP_ADDRESS} is required. For example, if running volttron instance locally, use tcp://127.0.0.1"
-        )
-    elif required_key == SERVER_KEY and not key_actual:
-        raise KeyError(
-            f"{SERVER_KEY} is required. To get the server key from the volttron instance that this agent will be connected to, use the command: vctl auth serverkey"
-        )
-    elif required_key == AGENT_PUBLIC and not key_actual:
-        raise KeyError(
-            f"{AGENT_PUBLIC} is required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
-        )
-    elif required_key == AGENT_SECRET and not key_actual:
-        raise KeyError(
-            f"{AGENT_SECRET} is required. To generate a public key and associated secret key from the volttron instance that this agent will be connected to, run the command: vctl auth keypair"
-        )
-    elif required_key == OPENADR_CLIENT_TYPE and not key_actual:
-        raise KeyError(
-            f"{OPENADR_CLIENT_TYPE} is required. Specify one of the following valid client types: {list(openadr_clients().keys())}"
-        )
-
-
-def ven_agent(config_path: str, **kwargs) -> OpenADRVenAgent:
-    """
-        Parse the OpenADRVenAgent configuration file and return an instance of
-        the agent that has been created using that configuration.
-        See initialize_config() method documentation for a description of each configurable parameter.
-
-    :param config_path: (str) Path to a configuration file.
-
-    :returns: OpenADRVenAgent
-    """
-    try:
-        config = load_config(config_path)
-    except NameError as err:
-        _log.exception(err)
-        raise
-    except Exception as err:
-        _log.error("Error loading configuration: {}".format(err))
-        config = {}
-
-    if not config:
-        raise Exception("Configuration cannot be empty.")
-
-    req_keys_actual = {k: "" for k in REQUIRED_KEYS}
-    for required_key in REQUIRED_KEYS:
-        key_actual = config.get(required_key)
-        check_required_key(required_key, key_actual)
-        req_keys_actual[required_key] = key_actual
-
-    remote_url = (
-        f"{req_keys_actual[VIP_ADDRESS]}"
-        f"?serverkey={req_keys_actual[SERVER_KEY]}"
-        f"&publickey={req_keys_actual[AGENT_PUBLIC]}"
-        f"&secretkey={req_keys_actual[AGENT_SECRET]}"
-    )
-
-    # optional configurations
-    debug = config.get(DEBUG)
-
-    # keypair paths
-    cert = config.get(CERT)
-    if cert:
-        cert = str(Path(cert).expanduser().resolve(strict=True))
-    key = config.get(KEY)
-    if key:
-        key = str(Path(key).expanduser().resolve(strict=True))
-
-    passphrase = config.get(PASSPHRASE)
-    vtn_fingerprint = config.get(VTN_FINGERPRINT)
-    show_fingerprint = config.get(SHOW_FINGERPRINT)
-    ca_file = config.get(CA_FILE)
-    ven_id = config.get(VEN_ID)
-    disable_signature = bool(config.get(DISABLE_SIGNATURE))
-    openadr_client_type = req_keys_actual[OPENADR_CLIENT_TYPE]
-
-    return OpenADRVenAgent(
-        req_keys_actual[VEN_NAME],
-        req_keys_actual[VTN_URL],
-        openadr_client_type,
-        debug=debug,
-        cert=cert,
-        key=key,
-        passphrase=passphrase,
-        vtn_fingerprint=vtn_fingerprint,
-        show_fingerprint=show_fingerprint,
-        ca_file=ca_file,
-        ven_id=ven_id,
-        disable_signature=disable_signature,
-        identity=IDENTITY,
-        # TODO: when volttron.utils gets fixed by https://github.com/VOLTTRON/volttron-utils/issues/6, remove the input 'address'
-        address=remote_url,
-        **kwargs,
-    )
+    vip_main(OpenADRVenAgent, IDENTITY)
 
 
 if __name__ == "__main__":

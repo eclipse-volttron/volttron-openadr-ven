@@ -1,5 +1,5 @@
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     setup_requires=["pbr"],
@@ -10,7 +10,6 @@ setup(
     # do not support Python 2, you can simplify this to '>=3.5' or similar, see
     # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
     python_requires=">=3.7, <4",
-
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[],  # Optional
@@ -35,9 +34,8 @@ setup(
     #
     dependency_links=[],
     entry_points={
-        'setuptools.installation': [
-            'eggsecutable = volttron_openadr_ven.agent:main',
+        "setuptools.installation": [
+            "eggsecutable = volttron_openadr_ven.agent:main"
         ]
-    }
-
+    },
 )

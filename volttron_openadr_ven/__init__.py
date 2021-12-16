@@ -62,7 +62,8 @@ try:
         setup_logging,
         format_timestamp,
         load_config,
-        isapipe
+        isapipe,
+        vip_main,
     )
     from volttron.platform.messaging import topics, headers
     from volttron.platform.vip.agent import Core, Agent
@@ -76,6 +77,7 @@ except ImportError:
         format_timestamp,
         load_config,
         isapipe,
+        vip_main,
     )
 
     from volttron.client.vip.agent import Agent, Core

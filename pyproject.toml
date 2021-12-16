@@ -9,7 +9,7 @@ python = "^3.8"
 black = "^21.5b2"
 mypy = "^0.812"
 pre-commit = "^2.13.0"
-volttron-client = "^0.3.4"
+volttron-client = "^0.3.8"
 openleadr = "^0.5.24"
 
 
