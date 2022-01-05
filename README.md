@@ -23,6 +23,8 @@ correct configuration with optional parameters added.
 
         # other optional configurations
         "debug": true,
+        # if you are connecting to a legacy VTN (i.e. not conformant to OpenADR 2.0) you might want
+        # to disable signatures when creating messages to be sent to a legacy VTN.
         "disable_signature": true
     }
 ```
@@ -70,7 +72,9 @@ volttron -vv -l volttron.log &
 tail -f volttron.log
 ```
 
-3. Install the agent on Volttron.
+3. Install the agent on Volttron in a secondary shell.
+
+Open a secondary shell and run the following command:
 
 ```shell
 vctl install <path to root directory of volttron-openadr-ven> \

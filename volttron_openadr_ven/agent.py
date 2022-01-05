@@ -100,17 +100,21 @@ class OpenADRVenAgent(Agent):
         # SubSystem/ConfigStore
         self.vip.config.set_default("config", self.default_config)
         self.vip.config.subscribe(
-            self._configure, actions=["NEW", "UPDATE"], pattern="config"
+            self.configure_ven_client,
+            actions=["NEW", "UPDATE"],
+            pattern="config",
         )
 
         self.ven_client: OpenADRClient
-        # configure the VEN client with default_config
-        self.configure_ven_client(self.default_config)
 
-    def configure_ven_client(self, config) -> None:
+    def configure_ven_client(self, config_name, action, contents) -> None:
         """
             Initialize the agent's configuration. Create an OpenADR Client using OpenLeadr.
         """
+        config = self.default_config.copy()
+        config.update(contents)
+
+        _log.info(f"config_name: {config_name}, action: {action}")
         _log.info(f"Configuring agent with: \n {pformat(config)} ")
 
         # instantiate VEN client
@@ -156,12 +160,6 @@ class OpenADRVenAgent(Agent):
 
         _log.info("Capabilities successfully added.")
         gevent.spawn_later(3, self.start_asyncio_loop)
-
-    def _configure(self, config_name, action, contents: dict) -> None:
-        """The agent's config may have changed. Re-initialize it."""
-        config = self.default_config.copy()
-        config.update(contents)
-        self.configure_ven_client(config)
 
     def start_asyncio_loop(self):
         _log.info("Starting agent...")
