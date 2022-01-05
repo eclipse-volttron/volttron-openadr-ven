@@ -1,5 +1,6 @@
 name: Test Pull Request
-
+on:
+  - push
 jobs:
   test:
     runs-on: ubuntu-2004
