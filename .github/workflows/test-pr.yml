@@ -36,6 +36,5 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          poetry shell
-          pytest tests/
-          coverage report
+          poetry run pytest tests
+          poetry run coverage report
