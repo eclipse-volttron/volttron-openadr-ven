@@ -16,25 +16,38 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-"""
-The VolttronOpenADR VEN agent uses the python library OpenLEADR https://github.com/openleadr/openleadr-python to create
-an OpenADR VEN client. This agent extends the OpenADRClient class from OpenLEADR so that it can have the flexibility
-to connect to any implementation of and OpenADR VTN. For example, to connect to an IPKeys VTN that was implemented
-on an old OpenADR protocol, the IPKeysDemoVTNOpenADRClient is created so that it can successfully connect to an IPKeys VTN.
-
-If you have a specific VTN that you want to connect to and require further customization of the VEN client, create your
-own OpenADRClient by extending the base class VolttronOpenADRClientBase, updating your client with your business logic, and putting that subclass in this module
-"""
-
-
 class OpenADRClientBase(OpenADRClient, ABC):
+    """
+        The Volttron OpenADR VEN agent uses the python library OpenLEADR https://github.com/openleadr/openleadr-python to create
+        an OpenADR VEN client. OpenADRClientBase is extended from OpenLEADR's OpenADRClient, giving us the flexibility
+        to connect to any implementation of an OpenADR VTN. For example, to connect to an IPKeys VTN that was implemented
+        on an old OpenADR protocol, the IPKeysClient subclass was created so that it can successfully connect to an IPKeys VTN.
+
+        If you have a specific VTN that you want to connect to and require further customization of the OpenADRVEN client, create your
+        own OpenADRClient by extending the base class OpenADRClientBase, updating your client with your business logic, and putting that subclass in this module.
+    """
+
     def __init__(self, ven_name, vtn_url, disable_signature=False, **kwargs):
+        """
+        Initializes a new OpenADR Client (Virtual End Node)
+
+        :param str ven_name: The name for this VEN
+        :param str vtn_url: The URL of the VTN (Server) to connect to
+        :param bool: The boolean flag to disable signatures on messages
+        """
         super().__init__(ven_name, vtn_url, **kwargs)
         self.disable_signature = disable_signature
 
 
 class IPKeysClient(OpenADRClientBase, ABC):
     def __init__(self, ven_name, vtn_url, disable_signature, **kwargs):
+        """
+        Initializes a new OpenADR Client (Virtual End Node)
+
+        :param str ven_name: The name for this VEN
+        :param str vtn_url: The URL of the VTN (Server) to connect to
+        :param bool: The boolean flag to disable signatures on messages
+        """
         super().__init__(ven_name, vtn_url, disable_signature, **kwargs)
 
         self._create_message = partial(
@@ -46,6 +59,9 @@ class IPKeysClient(OpenADRClientBase, ABC):
         )
 
     async def _on_event(self, message):
+        """
+        :param message dict: dictionary containing event information
+        """
         logger.debug("The VEN received an event")
         events = message["events"]
         try:
@@ -167,6 +183,14 @@ class IPKeysClient(OpenADRClientBase, ABC):
     ):
         """
         Create and optionally sign an OpenADR message. Returns an XML string.
+
+        :param message_type string: The type of message you are sending
+        :param str cert: The path to a PEM-formatted Certificate file to use
+                         for signing messages.
+        :param str key: The path to a PEM-formatted Private Key file to use
+                        for signing messages.
+        :param str passphrase: The passphrase for the Private Key
+        :param bool: The boolean flag to disable signatures on messages
         """
         message_payload = preflight_message(message_type, message_payload)
         template = TEMPLATES.get_template(f"{message_type}.xml")
@@ -194,13 +218,19 @@ class IPKeysClient(OpenADRClientBase, ABC):
 
 
 def openadr_clients():
+    """
+        Returns a dictionary in which the keys are the class names of OpenADRClientBase subclasses and the values are the subclass objects.
+        For example:
+
+        { "IPKeysClient": IPKeysClient }
+    """
     clients = {}
-    work = [OpenADRClient]
-    while work:
-        parent = work.pop()
+    children = [OpenADRClient]
+    while children:
+        parent = children.pop()
         for child in parent.__subclasses__():
             child_name = child.__name__
             if child_name not in clients:
                 clients[child_name] = child
-                work.append(child)
+                children.append(child)
     return clients
