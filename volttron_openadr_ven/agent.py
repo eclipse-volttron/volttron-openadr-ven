@@ -57,6 +57,7 @@ from . import (
     headers,
     Agent,
     vip_main,
+    RPC,
 )
 
 from volttron_openadr_ven.constants import (
@@ -149,15 +150,6 @@ class OpenADRVenAgent(Agent):
         # and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
         self.ven_client.add_handler("on_event", self.handle_event)
 
-        # Add the report capability to the client
-        # the following is a report to be sent to a IPKeys test VTN
-        self.ven_client.add_report(
-            callback=self.collect_report_value,
-            report_name=REPORT_NAME.TELEMETRY_USAGE,
-            resource_id="device001",
-            measurement=MEASUREMENTS.VOLTAGE,
-        )
-
         _log.info("Capabilities successfully added.")
         gevent.spawn_later(3, self.start_asyncio_loop)
 
@@ -210,10 +202,29 @@ class OpenADRVenAgent(Agent):
 
         return OPT.OPT_IN
 
-    async def collect_report_value(self):
-        # This callback is called when you need to collect a value for your Report
-        # below is dummy code; replace with your business logic
-        return 1.23
+    @RPC
+    def add_report_capability(
+        self, callback, report_name, resource_id, measurement
+    ):
+        """Add a new reporting capability to the client.
+
+        callable callback: A callback or coroutine that will fetch the value for a specific report. This callback will be passed the report_id and the r_id of the requested value.
+        str report_name: An OpenADR name for this report (one of openleadr.enums.REPORT_NAME)
+        str resource_id: A specific name for this resource within this report.
+        str measurement: The quantity that is being measured (openleadr.enums.MEASUREMENTS). Optional for TELEMETRY_STATUS reports.
+
+        Returns a report_specifier_id (str) and an r_id (str) an identifier for OpenADR messages
+        """
+        report_specifier_id, r_id = self.ven_client.add_report(
+            callback=callback,
+            report_name=report_name,
+            resource_id=resource_id,
+            measurement=measurement,
+        )
+        _log.info(
+            f"Output from add_report: report_specifier_id: {report_specifier_id}, r_id: {r_id}"
+        )
+        return report_specifier_id, r_id
 
     # ***************** VOLTTRON Pub/Sub Requests ********************
     def publish_event(self, event: dict) -> None:
