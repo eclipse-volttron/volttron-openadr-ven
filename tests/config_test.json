@@ -1,9 +1,0 @@
-{
-  "ven_name": "PNNLVEN",
-  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
-  "cert_path": "tests/cert_test.pem",
-  "key_path": "tests/privkey_test.pem",
-  "debug": true,
-  "disable_signature": true,
-  "openadr_client_type": "IPKeysClient"
-}

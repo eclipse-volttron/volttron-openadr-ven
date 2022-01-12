@@ -35,9 +35,21 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
-import openleadr
+# import openleadr
 
-from volttron_openadr_ven.agent import OpenADRVenAgent
+# from volttron_openadr_ven.agent import OpenADRVenAgent
+
+# config_test.json
+# TODO: get environment variable for cert and key paths
+# {
+#  "ven_name": "PNNLVEN",
+#  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
+#  "cert_path": ???,
+#  "key_path": ???,
+#  "debug": true,
+#  "disable_signature": true,
+#  "openadr_client_type": "IPKeysClient"
+# }
 
 # Integration tests
 # TODO: Implement test when volttron-testing package is created
