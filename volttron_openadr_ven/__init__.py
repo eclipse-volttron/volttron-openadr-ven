@@ -66,7 +66,7 @@ try:
         vip_main,
     )
     from volttron.platform.messaging import topics, headers
-    from volttron.platform.vip.agent import Core, Agent
+    from volttron.platform.vip.agent import Agent, Core, RPC
 
 except ImportError:
 
@@ -80,5 +80,5 @@ except ImportError:
         vip_main,
     )
 
-    from volttron.client.vip.agent import Agent, Core
+    from volttron.client.vip.agent import Agent, Core, RPC
     from volttron.client.messaging import topics, headers
