@@ -53,5 +53,5 @@
 
 # Integration tests
 # TODO: Implement test when volttron-testing package is created
-# def test_on_start_should_publish_event_to_volttron():
-#     pass
+def test_on_start_should_publish_event_to_volttron():
+    pass
