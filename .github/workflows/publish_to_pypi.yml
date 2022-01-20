@@ -1,73 +1,70 @@
-#name: ci
-#
-#on:
-#  push:
-#    branches:
-#    - master
-#  pull_request:
-#    branches:
-#    - master
-#
-#defaults:
-#  run:
-#    shell: bash
-#
-#env:
-#  LANG: en_US.utf-8
-#  LC_ALL: en_US.utf-8
-#  POETRY_VIRTUALENVS_IN_PROJECT: 'true'
-#  PYTHONIOENCODING: UTF-8
-#  PYTHON_VERSIONS: ''
-#
-#jobs:
-#
-#  tests:
-#
-#    strategy:
-#      max-parallel: 6
-#      matrix:
-#        os: [ubuntu-latest, windows-latest, macos-latest]
-#        python-version: [3.6, 3.7, 3.8, 3.9]
-#        exclude:
-#        - os: windows-latest
-#          python-version: 3.6
-#        - os: windows-latest
-#          python-version: 3.7
-#
-#    runs-on: ${{ matrix.os }}
-#    continue-on-error: ${{ matrix.os != 'ubuntu-latest' }}
-#
-#    steps:
-#    - name: Checkout
-#      uses: actions/checkout@v2
-#
-#    - name: Set up git
-#      run: |
-#        git config --global user.email "pawamoy@pm.me"
-#        git config --global user.name "Timothée Mazzucotelli"
-#    - name: Set up Python ${{ matrix.python-version }}
-#      uses: actions/setup-python@v2
-#      with:
-#        python-version: ${{ matrix.python-version }}
-#
-#    - name: Set up the cache
-#      uses: actions/cache@v1
-#      env:
-#        cache-name: cache-python-packages
-#      with:
-#        path: tests/tmp/.venv
-#        key: ${{ matrix.os }}-${{ matrix.python-version }}-${{ env.cache-name }}
-#        restore-keys: |
-#          ${{ matrix.os }}-${{ matrix.python-version }}-
-#          ${{ matrix.os }}-
-#    - name: Set up the project
-#      run: |
-#        pip install poetry safety copier
-#        poetry config virtualenvs.in-project true
-#    - name: Run the test suite
-#      run: make test
-#
-#    - name: Run pre commit
-#      run: |
-#        pip install pre-commit
-#        SKIP=end-of-file-fixer,trailing-whitespace pre-commit run --all-files
+name: Publish to PyPi
+
+on:
+  release:
+    types: [published]
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+jobs:
+
+  publish_to_pypi:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      #----------------------------------------------
+      #       load cached venv if cache exists
+      #----------------------------------------------
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      #----------------------------------------------
+      # install dependencies if cache does not exist
+      #----------------------------------------------
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      #----------------------------------------------
+      # install your root project, if required
+      #----------------------------------------------
+      - name: Install library
+        run: poetry install --no-interaction
+
+      #----------------------------------------------
+      # publish to pypi
+      #----------------------------------------------
+
+      - name: Publish to pypi
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry config --list
+          echo 'Publishing to pypi...'
+          poetry publish -vvv --build
