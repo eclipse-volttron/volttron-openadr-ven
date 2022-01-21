@@ -39,7 +39,6 @@
 
 # from volttron_openadr_ven.agent import OpenADRVenAgent
 
-# config_test.json
 # TODO: get environment variable for cert and key paths
 # {
 #  "ven_name": "PNNLVEN",
