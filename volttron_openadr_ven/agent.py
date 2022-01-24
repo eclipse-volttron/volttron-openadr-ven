@@ -43,7 +43,7 @@ import gevent
 from pathlib import Path
 from pprint import pformat
 from datetime import timedelta
-from typing import Callable
+from typing import Callable, Dict
 
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr.client import OpenADRClient
@@ -113,7 +113,7 @@ class OpenADRVenAgent(Agent):
         self.ven_client: OpenADRClient
 
     def configure_ven_client(
-        self, config_name: str, action: str, contents: dict
+        self, config_name: str, action: str, contents: Dict
     ) -> None:
         """Initializes the agent's configuration and creates an OpenADR Client using OpenLeadr.
 
@@ -278,15 +278,15 @@ class OpenADRVenAgent(Agent):
             peer="pubsub",
             topic=f"{topics.OPENADR_EVENT}/{self.ven_client.ven_name}",
             headers={headers.TIMESTAMP: format_timestamp(get_aware_utc_now())},
-            message=OpenADRVenAgent.to_json_object(event),
+            message=OpenADRVenAgent.parse_event(event),
         )
 
         return
 
     # ***************** Helper methods ********************
     @staticmethod
-    def to_json_object(obj: Event):
-        """Ensure that an object is valid JSON by dumping it with json_converter and then reloading it.
+    def parse_event(obj: Event):
+        """Parse event so that it properly displays on message bus.
 
         :param obj: The event received from a VTN
         :type obj: Event
