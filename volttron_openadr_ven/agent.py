@@ -93,8 +93,9 @@ class OpenADRVenAgent(Agent):
     to the need to adjust electric power consumption in response to fluctuations in grid demand.
     OpenADR communications are conducted between Virtual Top Nodes (VTNs) and Virtual End Nodes (VENs).
 
-    :param config_path: The path to the configuration of this agent
+    :param config_path: path to agent config
     :type config_path: str
+
     """
 
     def __init__(self, config_path: str, **kwargs) -> None:
@@ -187,23 +188,22 @@ class OpenADRVenAgent(Agent):
         :param event: The event sent from a VTN
         :Example:
 
-        {
-            'event_id': '123786-129831',
-            'active_period': {'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
-                              'duration': datetime.timedelta(minutes=30)}
-            'event_signals': [{'signal_name': 'simple',
-                               'signal_type': 'level',
-                               'intervals': [{'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
-                                              'duration': datetime.timedelta(minutes=10),
-                                              'signal_payload': 1},
-                                              {'dtstart': datetime.datetime(2020, 1, 1, 12, 10, 0, tzinfo=timezone.utc),
-                                              'duration': datetime.timedelta(minutes=10),
-                                              'signal_payload': 0},
-                                              {'dtstart': datetime.datetime(2020, 1, 1, 12, 20, 0, tzinfo=timezone.utc),
-                                              'duration': datetime.timedelta(minutes=10),
-                                              'signal_payload': 1}],
-           'targets': [{'resource_id': 'Device001'}],
-           'targets_by_type': {'resource_id': ['Device001']}
+        {'event_id': '123786-129831',
+        'active_period': {
+        'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc), 'duration': datetime.timedelta(minutes=30)}
+        'event_signals': [{'signal_name': 'simple',
+        'signal_type': 'level',
+        'intervals': [{'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        'duration': datetime.timedelta(minutes=10),
+        'signal_payload': 1},
+        {'dtstart': datetime.datetime(2020, 1, 1, 12, 10, 0, tzinfo=timezone.utc),
+        'duration': datetime.timedelta(minutes=10),
+        'signal_payload': 0},
+        {'dtstart': datetime.datetime(2020, 1, 1, 12, 20, 0, tzinfo=timezone.utc),
+        'duration': datetime.timedelta(minutes=10),
+        'signal_payload': 1}],
+        'targets': [{'resource_id': 'Device001'}],
+        'targets_by_type': {'resource_id': ['Device001']}
         }
 
         :return: Message to VTN to opt in to the event.
@@ -223,7 +223,7 @@ class OpenADRVenAgent(Agent):
 
         return OPT.OPT_IN
 
-    @RPC
+    @RPC.export
     def add_report_capability(
         self,
         callback: Callable,
