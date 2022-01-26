@@ -1,15 +1,56 @@
-name: Test Pull Request
+name: Build and Run Tests
+
 on:
-  - push
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  LANG: en_US.utf-8
+  LC_ALL: en_US.utf-8
+  SOURCE: volttron_openadr_ven
+  TESTS: tests/
+
 jobs:
-  test:
-    runs-on: ubuntu-20.04
+
+  build_and_test:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-20.04 ]
+        python-version: [ 3.8 ]
+    runs-on: ${{ matrix.os }}
+
     steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
+      #----------------------------------------------
+      #  -----  install & configure poetry  -----
+      #----------------------------------------------
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
 
       #----------------------------------------------
       #       load cached venv if cache exists
@@ -31,10 +72,25 @@ jobs:
       #----------------------------------------------
       - name: Install library
         run: poetry install --no-interaction
+
       #----------------------------------------------
-      #              run test suite
+      # run pre-commit hooks to ensure code standardization
+      #----------------------------------------------
+      - name: Run pre commit
+        run: |
+          pip install pre-commit
+          SKIP=end-of-file-fixer,trailing-whitespace pre-commit run --all-files
+
+      #----------------------------------------------
+      # run test suite
       #----------------------------------------------
       - name: Run tests
         run: |
-          poetry run pytest tests
-          poetry run coverage report
+          source ./.venv/bin/activate
+          pytest --cov=${{ env.SOURCE }} ${{ env.TESTS }}
+
+      #----------------------------------------------
+      # test build stability
+      #----------------------------------------------
+      - name: Build artifacts
+        run: poetry build -vvv
