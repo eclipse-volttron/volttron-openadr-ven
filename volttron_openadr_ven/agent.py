@@ -43,7 +43,7 @@ import gevent
 from pathlib import Path
 from pprint import pformat
 from datetime import timedelta
-from typing import Callable, Dict
+from typing import Callable, Dict, Any
 
 from openleadr.enums import OPT, REPORT_NAME, MEASUREMENTS
 from openleadr.client import OpenADRClient
@@ -94,39 +94,31 @@ class OpenADRVenAgent(Agent):
     OpenADR communications are conducted between Virtual Top Nodes (VTNs) and Virtual End Nodes (VENs).
 
     :param config_path: path to agent config
-    :type config_path: str
-
     """
 
     def __init__(self, config_path: str, **kwargs) -> None:
         super(OpenADRVenAgent, self).__init__(enable_web=True, **kwargs)
 
-        self.default_config = self.parse_config(config_path)
+        self.default_config = self._parse_config(config_path)
 
         # SubSystem/ConfigStore
         self.vip.config.set_default("config", self.default_config)
         self.vip.config.subscribe(
-            self.configure_ven_client,
+            self._configure_ven_client,
             actions=["NEW", "UPDATE"],
             pattern="config",
         )
 
         self.ven_client: OpenADRClient
 
-    def configure_ven_client(
+    def _configure_ven_client(
         self, config_name: str, action: str, contents: Dict
     ) -> None:
         """Initializes the agent's configuration and creates an OpenADR Client using OpenLeadr.
 
         :param config_name:
-        :type config_name: str
         :param action: the action
-        :type action: str
         :param contents: the configuration used to update the agent's configuration
-        :type contents: dict
-
-        :return: None
-        :rtype: None
         """
         config = self.default_config.copy()
         config.update(contents)
@@ -167,13 +159,10 @@ class OpenADRVenAgent(Agent):
         self.ven_client.add_handler("on_event", self.handle_event)
 
         _log.info("Capabilities successfully added.")
-        gevent.spawn_later(3, self.start_asyncio_loop)
+        gevent.spawn_later(3, self._start_asyncio_loop)
 
-    def start_asyncio_loop(self):
-        """ Starts event loop
-
-        :return: None
-        :rtype: None
+    def _start_asyncio_loop(self) -> None:
+        """ Start event loop
         """
         _log.info("Starting agent...")
         loop = asyncio.get_event_loop()
@@ -186,28 +175,7 @@ class OpenADRVenAgent(Agent):
         """Publish event to the Volttron message bus. This coroutine will be called when there is an event to be handled.
 
         :param event: The event sent from a VTN
-        :Example:
-
-        {'event_id': '123786-129831',
-        'active_period': {
-        'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc), 'duration': datetime.timedelta(minutes=30)}
-        'event_signals': [{'signal_name': 'simple',
-        'signal_type': 'level',
-        'intervals': [{'dtstart': datetime.datetime(2020, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
-        'duration': datetime.timedelta(minutes=10),
-        'signal_payload': 1},
-        {'dtstart': datetime.datetime(2020, 1, 1, 12, 10, 0, tzinfo=timezone.utc),
-        'duration': datetime.timedelta(minutes=10),
-        'signal_payload': 0},
-        {'dtstart': datetime.datetime(2020, 1, 1, 12, 20, 0, tzinfo=timezone.utc),
-        'duration': datetime.timedelta(minutes=10),
-        'signal_payload': 1}],
-        'targets': [{'resource_id': 'Device001'}],
-        'targets_by_type': {'resource_id': ['Device001']}
-        }
-
         :return: Message to VTN to opt in to the event.
-        :rtype: openleadr.enums.OPT
         """
         try:
             _log.debug("Received event. Processing event now...")
@@ -233,16 +201,14 @@ class OpenADRVenAgent(Agent):
     ) -> tuple:
         """Add a new reporting capability to the client.
 
+        This method is remotely accessible by other agents through Volttron's feature Remote Procedure Call (RPC);
+        for reference on RPC, see https://volttron.readthedocs.io/en/develop/platform-features/message-bus/vip/vip-json-rpc.html?highlight=remote%20procedure%20call
+
         :param callback: A callback or coroutine that will fetch the value for a specific report. This callback will be passed the report_id and the r_id of the requested value.
-        :type callback: Callable
         :param report_name: An OpenADR name for this report
-        :type report_name: REPORT_NAME
         :param resource_id: A specific name for this resource within this report.
-        :type resource_id: str
         :param measurement: The quantity that is being measured
-        :type measurement: MEASUREMENTS
-        :return: Returns a report_specifier_id (str) and an r_id (str) an identifier for OpenADR messages
-        :rtype: tuple
+        :return: Returns a tuple consisting of a report_specifier_id (str) and an r_id (str) an identifier for OpenADR messages
         """
         report_specifier_id, r_id = self.ven_client.add_report(
             callback=callback,
@@ -260,9 +226,6 @@ class OpenADRVenAgent(Agent):
         """Publish an event to the Volttron message bus. When an event is created/updated, it is published to the VOLTTRON bus with a topic that includes 'openadr/event_update'.
 
         :param event: The Event received from the VTN
-        :type event: Event
-        :return: None
-        :rtype: None
         """
         # OADR rule 6: If testEvent is present and != "false", handle the event as a test event.
         try:
@@ -278,20 +241,18 @@ class OpenADRVenAgent(Agent):
             peer="pubsub",
             topic=f"{topics.OPENADR_EVENT}/{self.ven_client.ven_name}",
             headers={headers.TIMESTAMP: format_timestamp(get_aware_utc_now())},
-            message=OpenADRVenAgent.parse_event(event),
+            message=OpenADRVenAgent._parse_event(event),
         )
 
         return
 
     # ***************** Helper methods ********************
     @staticmethod
-    def parse_event(obj: Event):
+    def _parse_event(obj: Event) -> Any:
         """Parse event so that it properly displays on message bus.
 
         :param obj: The event received from a VTN
-        :type obj: Event
         :return: A deserialized Event that is converted into a python object
-        :rtype: Any
         """
         obj_string = jsonapi.dumps(
             obj,
@@ -301,13 +262,11 @@ class OpenADRVenAgent(Agent):
         )
         return jsonapi.loads(obj_string)
 
-    def parse_config(self, config_path: str) -> dict:
+    def _parse_config(self, config_path: str) -> dict:
         """Parses the OpenADR agent's configuration file.
 
         :param config_path: The path to the configuration file
-        :type config_path: str
         :return: The configuration
-        :rtype: dict
         """
         try:
             config = load_config(config_path)
@@ -324,7 +283,7 @@ class OpenADRVenAgent(Agent):
         req_keys_actual = {k: "" for k in REQUIRED_KEYS}
         for required_key in REQUIRED_KEYS:
             key_actual = config.get(required_key)
-            self.check_required_key(required_key, key_actual)
+            self._check_required_key(required_key, key_actual)
             req_keys_actual[required_key] = key_actual
 
             # optional configurations
@@ -363,16 +322,12 @@ class OpenADRVenAgent(Agent):
             OPENADR_CLIENT_TYPE: openadr_client_type,
         }
 
-    def check_required_key(self, required_key: str, key_actual: str) -> None:
+    def _check_required_key(self, required_key: str, key_actual: str) -> None:
         """Checks if the given key and its value are required by this agent
 
         :param required_key: the key that is being checked
-        :type required_key: str
         :param key_actual: the key value being checked
-        :type key_actual: str
         :raises KeyError:
-        :return: None
-        :rtype: None
         """
         if required_key == VEN_NAME and not key_actual:
             raise KeyError(f"{VEN_NAME} is required.")
