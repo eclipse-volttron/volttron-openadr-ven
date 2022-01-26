@@ -191,3 +191,68 @@ This repo uses [MyPy](https://mypy.readthedocs.io/en/stable/), a static type che
 ```shell
 mypy <path to file>
 ```
+
+# CI/CD
+
+## Pull Requests
+
+Any pull requests to 'main' will be run through our 'test-pr.yml' Github Workflow, which will ensure that the requested code changes
+will be linted, tested, and built.
+
+## Release process
+
+NOTE: This section only applies to the maintainers of this repo.
+
+At a high level, the release process will consist of three steps:
+
+1. From 'main', update the project version and commit it to 'main'; also, create a tag from that commit.
+2. Manually update and publish the release notes.
+3. Publish to PyPi.
+
+Below is the step-by-step instructions on creating a release from your local environment:
+
+1. Fetch from the repo and ensure that your local 'main' is up-to-date with the remote 'main'
+
+```shell
+git fetch --all
+```
+
+2. Bump the project version in accordance with [Semantic Versioning](https://semver.org/). Use poetry to update the version in 'pyproject.toml'. For reference, see [poetry version docs](https://python-poetry.org/docs/cli/#version)
+
+```shell
+# command form
+# poetry version <version>
+
+# examples
+poetry version minor
+poetry version 42.0
+```
+
+3. Commit this version change.
+
+```shell
+git add .
+git commit -m "Bump version to $(poetry version --short)"
+```
+
+4. Create tag from this commit. Note that "v" is prepended to the name of the tag. This is required to ensure that the 'create-release.yml' workflow is triggered.
+
+```shell
+git tag "v$(poetry version --short)"
+```
+
+5. Push tag and commit to main. Ensure that the remote 'upstream' is pointing to: git@github.com:VOLTTRON/volttron-openadr-ven.git
+
+```shell
+# you must provide the name of the tag
+# to get tag name run 'git tag -l'
+git push --atomic upstream main <name of tag>
+```
+
+6. Create the draft release. This step is automated by 'create-release.yml' workflow.
+
+7. Update and publish the release created in the previous step. This is a manual step to provide a final check by a human before the release is published. The release is located at https://github.com/VOLTTRON/volttron-openadr-ven/releases.
+
+8. Publish to PyPi. This step is automated by 'publish-to-pypi.yml' and is triggered when the release is published in the previous step.
+
+9. Verify that the release was published on PyPi; go to https://pypi.org/project/volttron-openadr-ven/
