@@ -35,24 +35,23 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
-"""
-This __init__.py file is a shim that allows the agent to run in either the 8.x version of VOLTTRON
-or the new modular volttron.  The imports are the primary difference and therefore if the
-8.x version is loaded but the modular version is only available then an import exception will
-be thrown.
 
-If neither are available then an import exception will be thrown.
-
-In order to use this, the agent itself should use this import by using
-
-from . import (
-    get_aware_utc_now,
-    ....
-    ....
-)
-
-This redirects the correct version of the code to either the modular or 8.x version to import.
-"""
+# This __init__.py file is a shim that allows the agent to run in either the 8.x version of VOLTTRON
+# or the new modular volttron.  The imports are the primary difference and therefore if the
+# 8.x version is loaded but the modular version is only available then an import exception will
+# be thrown.
+#
+# If neither are available then an import exception will be thrown.
+#
+# In order to use this, the agent itself should use this import by using
+#
+# from . import (
+#     get_aware_utc_now,
+#     ....
+#     ....
+# )
+#
+# This redirects the correct version of the code to either the modular or 8.x version to import.
 try:
     # Attempt to import from 8.x version of VOLTTRON if not successful to import then
     # attempt to import from modular version of VOLTTRON.
@@ -66,7 +65,7 @@ try:
         vip_main,
     )
     from volttron.platform.messaging import topics, headers
-    from volttron.platform.vip.agent import Core, Agent
+    from volttron.platform.vip.agent import Agent, Core, RPC
 
 except ImportError:
 
@@ -80,5 +79,5 @@ except ImportError:
         vip_main,
     )
 
-    from volttron.client.vip.agent import Agent, Core
+    from volttron.client.vip.agent import Agent, Core, RPC
     from volttron.client.messaging import topics, headers
