@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "volttron-openadr-ven"
-version = "0.1.0"
+version = "1.0.0"
 description = "A Volttron agent that acts as a Virtual End Node (VEN) within the OpenADR 2.0b specification."
 authors = ["Mark Bonicillo <mark.bonicillo@pnnl.gov>"]
 
