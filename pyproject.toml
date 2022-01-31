@@ -13,6 +13,17 @@ packages = [
 ]
 keywords = ["volttron", "agent", "openadr", "application"]
 
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Home Automation",
+    "Topic :: Software Development :: Embedded Systems",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9"
+]
+
 [tool.poetry.dependencies]
 python = "^3.8"
 black = "^21.5b2"
