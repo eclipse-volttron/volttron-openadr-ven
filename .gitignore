@@ -135,3 +135,4 @@ config_*.json
 .DS_Store
 AUTHORS
 ChangeLog
+poetry.lock
