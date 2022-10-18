@@ -25,12 +25,13 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-black = "^21.5b2"
-mypy = "^0.812"
-pre-commit = "^2.13.0"
-volttron-client = "^0.3.8"
-openleadr = "^0.5.24"
+python = ">=3.8,<4.0"
+volttron = "^10.0.1a28"
+# Volttron requires cryptography 36 and above, however, the current version of openleadr is constrained to use cryptography >=2.1.4, <4
+# For now, this agent will use a forked version that addresses this issue
+openleadr = {git = "https://github.com/bonicim/openleadr-python.git", branch = "fix-dependency"}
+# A PR has been created for the third-party library, openleadr, to fix this dependency issue: https://github.com/OpenLEADR/openleadr-python/pull/129
+# openleadr = ">=0.5.26"
 
 [tool.poetry.scripts]
 volttron_openadr_ven="volttron_openadr_ven.agent:main"
@@ -38,14 +39,21 @@ volttron_openadr_ven="volttron_openadr_ven.agent:main"
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/VOLTTRON/volttron-openadr-ven/issues"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.4"
-Sphinx = "^4.4.0"
 pytest-cov = "^3.0.0"
+black = "^21.5b2"
+mypy = "^0.812"
+pre-commit = "^2.13.0"
+volttron-testing = "^0.3.1a7"
+
+[tool.poetry.group.documentation.dependencies]
+Sphinx = "^4.5.0"
+sphinx-rtd-theme = "^1.0.0"
 
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.2.2"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
