@@ -21,22 +21,16 @@
 #
 # ===----------------------------------------------------------------------===
 
-# import openleadr
-
-# from volttron_openadr_ven.agent import OpenADRVenAgent
-
-# TODO: get environment variable for cert and key paths
-# {
-#  "ven_name": "PNNLVEN",
-#  "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
-#  "cert_path": ???,
-#  "key_path": ???,
-#  "debug": true,
-#  "disable_signature": true,
-#  "openadr_client_type": "IPKeysClient"
-# }
-
-
-# TODO: Implement test when volttron-testing package is created
-def test_on_start_should_publish_event_to_volttron():
-    pass
+# key names for processing config file for OpenADR VEN agent
+VEN_NAME = "ven_name"
+VTN_URL = "vtn_url"
+DEBUG = "debug"
+CERT = "cert_path"
+KEY = "key_path"
+PASSPHRASE = "passphrase"
+VTN_FINGERPRINT = "vtn_fingerprint"
+SHOW_FINGERPRINT = "show_fingerprint"
+CA_FILE = "ca_file"
+VEN_ID = "ven_id"
+DISABLE_SIGNATURE = "disable_signature"
+REQUIRED_KEYS = [VEN_NAME, VTN_URL]
