@@ -1,6 +1,6 @@
 # OpenADRVen Agent
 
-[![Pytests](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml/badge.svg)](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml)
+[![Passing?](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml/badge.svg)](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml)
 [![pypi version](https://img.shields.io/pypi/v/volttron-openadr-ven.svg)](https://pypi.org/project/volttron-openadr-ven/)
 
 
@@ -35,14 +35,14 @@ pyenv global system 3.8.10
 
 # Installation
 
-Create and activate a virtual environment.
+1. Create and activate a virtual environment.
 
 ```shell
 python -m venv env
 source env/bin/activate
 ```
 
-Installing volttron-platform-driver requires a running volttron instance.
+2. Install volttron and start the platform.
 
 ```shell
 pip install volttron
@@ -51,23 +51,40 @@ pip install volttron
 volttron -vv -l volttron.log &
 ```
 
-Install and start the volttron-openadr-ven.
+3. Install and start the Volttron OpenADRVen Agent.
 
 ```shell
-vctl install volttron-openadr-ven --agent-config <path to agent config> --start
+vctl install volttron-openadr-ven --agent-config <path to agent config> \
+--vip-identity openadr.ven \
+--start
 ```
 
-View the status of the installed agent
+4. View the status of the installed agent
 
 ```shell
 vctl status
+```
+
+5. Observe Data
+
+The OpenADR publishes events on the message bus. To see these events in the Volttron log file, install a [Listener Agent](https://pypi.org/project/volttron-listener/):
+
+```
+vctl install volttron-listener --start
+```
+
+Once installed, you should see the data being published by viewing the Volttron logs file that was created in step 2.
+To watch the logs, open a separate terminal and run the following command:
+
+```
+tail -f <path to folder containing volttron.log>/volttron.log
 ```
 
 # Agent Configuration
 
 The required parameters for this agent are "ven_name" and "vtn_url". Below is an example of a correct configuration with optional parameters added.
 
-```jsonpath
+```yaml
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",

@@ -2,27 +2,22 @@
 requires = ["poetry-core>=1.2.2"]
 build-backend = "poetry.core.masonry.api"
 
-[tool]
+[tool.mypy]
+show_error_context = true
+pretty = true
+show_column_numbers = true
+show_error_codes = true
+exclude = ['docs/']
 
-[tool.black]
-line-length = 79
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/'''
+[tool.mypy-mock]
+ignore_missing_imports = true
+
+[tool.mypy-pytz]
+ignore_missing_imports = true
 
 [tool.poetry]
 name = "volttron-openadr-ven"
-version = "1.0.0"
+version = "0.0.0"
 description = "A Volttron agent that acts as a Virtual End Node (VEN) within the OpenADR 2.0b specification."
 authors = ["Mark Bonicillo <mark.bonicillo@pnnl.gov>"]
 license = "Apache-2.0"
@@ -45,7 +40,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-volttron = "^10.0.1a28"
+volttron = "10.0.2rc0"
 openleadr = "0.5.27"
 cryptography = ">=36.0.1,<37.0.0"
 
