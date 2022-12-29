@@ -46,26 +46,22 @@ pyenv global system 3.8.10
 
 # Installation
 
-
 1. Create and activate a virtual environment.
 
+   ```shell
+   python -m venv env
+   source env/bin/activate
+   ```
 
-```shell
-python -m venv env
-source env/bin/activate
-```
+1. Install volttron and start the platform.
 
-
-2. Install volttron and start the platform.
-
-
-```shell
-pip install volttron
+  ```shell
+  pip install volttron
 
 
-# Start platform with output going to volttron.log
-volttron -vv -l volttron.log &
-```
+  # Start platform with output going to volttron.log
+  volttron -vv -l volttron.log &
+  ```
 
 
 3. Install and start the Volttron OpenADRVen Agent.
