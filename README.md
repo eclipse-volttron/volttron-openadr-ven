@@ -14,36 +14,6 @@ OpenADR (Automated Demand Response) is a standard for alerting and responding to
 * Python 3.8
 
 
-## Python
-
-
-<details>
-<summary>To install Python 3.8, we recommend using <a href="https://github.com/pyenv/pyenv"><code>pyenv</code></a>.</summary>
-
-
-```bash
-# install pyenv
-git clone https://github.com/pyenv/pyenv ~/.pyenv
-
-
-# setup pyenv (you should also put these three lines in .bashrc or similar)
-export PATH="${HOME}/.pyenv/bin:${PATH}"
-export PYENV_ROOT="${HOME}/.pyenv"
-eval "$(pyenv init -)"
-
-
-# install Python 3.8
-pyenv install 3.8.10
-
-
-# make it available globally
-pyenv global system 3.8.10
-```
-
-
-</details>
-
-
 # Installation
 
 
