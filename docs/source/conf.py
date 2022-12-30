@@ -15,7 +15,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-
 # -- Project information -----------------------------------------------------
 
 project = "Volttron OpenADR VEN"
@@ -24,7 +23,6 @@ author = "Volttron Team"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.0"
-
 
 # -- General configuration ---------------------------------------------------
 
