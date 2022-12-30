@@ -46,6 +46,7 @@ pyenv global system 3.8.10
 
 # Installation
 
+
 1. Create and activate a virtual environment.
 
    ```shell
@@ -55,51 +56,48 @@ pyenv global system 3.8.10
 
 1. Install volttron and start the platform.
 
-  ```shell
-  pip install volttron
+    ```shell
+    pip install volttron
 
 
-  # Start platform with output going to volttron.log
-  volttron -vv -l volttron.log &
-  ```
+    # Start platform with output going to volttron.log
+    volttron -vv -l volttron.log &
+    ```
+
+1.  Install and start the Volttron OpenADRVen Agent.
 
 
-3. Install and start the Volttron OpenADRVen Agent.
+    ```shell
+    vctl install volttron-openadr-ven --agent-config <path to agent config> \
+    --vip-identity openadr.ven \
+    --start
+    ```
+
+1. View the status of the installed agent
 
 
-```shell
-vctl install volttron-openadr-ven --agent-config <path to agent config> \
---vip-identity openadr.ven \
---start
-```
+    ```shell
+    vctl status
+    ```
+
+1. Observe Data
+
+    The OpenADR publishes events on the message bus. To see these events in the Volttron log file, install a [Listener Agent](https://pypi.org/project/volttron-listener/):
 
 
-4. View the status of the installed agent
+    ```
+    vctl install volttron-listener --start
+    ```
 
 
-```shell
-vctl status
-```
+    Once installed, you should see the data being published by viewing the Volttron logs file that was created in step 2.
+
+    To watch the logs, open a separate terminal and run the following command:
 
 
-5. Observe Data
-
-
-The OpenADR publishes events on the message bus. To see these events in the Volttron log file, install a [Listener Agent](https://pypi.org/project/volttron-listener/):
-
-
-```
-vctl install volttron-listener --start
-```
-
-
-Once installed, you should see the data being published by viewing the Volttron logs file that was created in step 2.
-To watch the logs, open a separate terminal and run the following command:
-
-
-```
-tail -f <path to folder containing volttron.log>/volttron.log
-```
+    ```
+    tail -f <path to folder containing volttron.log>/volttron.log
+    ```
 
 
 # Agent Configuration
