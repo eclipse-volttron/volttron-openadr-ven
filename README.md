@@ -110,18 +110,9 @@ The required parameters for this agent are "ven_name" and "vtn_url". Below is an
     {
         "ven_name": "PNNLVEN",
         "vtn_url": "https://eiss2demo.ipkeys.com/oadr2/OpenADR2/Simple/2.0b",
-
-        # below are optional configurations
-
-        # if you want/need to sign outgoing messages using a public-private key pair, provide the relative path to the cert_path and key_path
-        # in this example, the keypair is stored in the directory named '~/.ssh/secret'
         "cert_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_cert.pem",
         "key_path": "~/.ssh/secret/TEST_RSA_VEN_210923215148_privkey.pem",
-
-        # other optional configurations
         "debug": true,
-        # if you are connecting to a legacy VTN (i.e. not conformant to OpenADR 2.0) you might want
-        # to disable signatures when creating messages to be sent to a legacy VTN.
         "disable_signature": true
     }
 ```
