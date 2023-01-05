@@ -131,7 +131,6 @@ dmypy.json
 .idea/
 
 *secret
-config_*.json
 .DS_Store
 AUTHORS
 ChangeLog

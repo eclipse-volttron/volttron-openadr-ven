@@ -14,7 +14,7 @@ repos:
   - id: trailing-whitespace
   - id: check-merge-conflict
   - id: no-commit-to-branch  # blocks main commits.  To bypass do git commit --allow-empty
-  - id: pretty-format-json
+  # - id: pretty-format-json
 
 # For more information about mypy, see https://github.com/pre-commit/mirrors-mypy
 - repo: https://github.com/pre-commit/mirrors-mypy
@@ -27,8 +27,8 @@ repos:
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.2.0
   hooks:
-  - id: pretty-format-toml
-    args: [--autofix]
+  # - id: pretty-format-toml
+  #   args: [--autofix]
   - id: pretty-format-yaml
     args: [--autofix]
     exclude: .copier-answer.yml

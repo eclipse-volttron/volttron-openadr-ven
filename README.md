@@ -1,7 +1,7 @@
 # OpenADRVen Agent
 
 
-[![Passing?](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml/badge.svg)](https://github.com/VOLTTRON/volttron-openadr-ven/actions/workflows/run-tests.yml)
+[![Passing?](https://github.com/eclipse-volttron/volttron-openadr-ven/actions/workflows/run-tests.yml/badge.svg)](https://github.com/eclipse-volttron/volttron-openadr-ven/actions/workflows/run-tests.yml?query=branch%3Adevelop)
 [![pypi version](https://img.shields.io/pypi/v/volttron-openadr-ven.svg)](https://pypi.org/project/volttron-openadr-ven/)
 
 
@@ -90,6 +90,67 @@ The required parameters for this agent are "ven_name" and "vtn_url". Below is an
 
 Save this configuration in a JSON file in your preferred location. An example of such a configuration is saved in the
 root of this repository; the file is named `config_example1.json`
+
+# Testing
+
+If you don't have a dedicated VTN to test the VolttronOpenADR against, you can setup a local VTN instead. After setting up a local VTN, configure an VolttronOpenADRVen Agent against that local VTN and then install the agent on your VOLTTRON instance.
+
+To setup a local VTN, we have provided a script and a custom agent configuration for convenience. Follow the steps below to setup a local VTN and corresponding Volttron OpenADRVen Agent:
+
+
+1. Create a virtual environment:
+
+
+    ```shell
+    python -m venv env
+    source env/bin/activate
+    ```
+
+
+1. Install [openleadr](https://pypi.org/project/openleadr/):
+
+    ```shell
+    pip install openleadr
+    ```
+
+1. At the top level of this project, run the VTN server in the foreground so that we can observe logs:
+
+    ```shell
+    python utils/vtn.py
+    ```
+
+1. Open up another terminal, create a folder called temp, and create another virtual environment:
+
+    ```shell
+    mkdir temp
+    cd temp
+    python -m venv env
+    source env/bin/activate
+    ```
+
+1. Install volttron:
+
+    ```shell
+    pip install volttron
+    ```
+
+1. Run volttron in the background:
+
+    ```shell
+    volttron -vv -l volttron.log &
+    ```
+
+1. Install the VolttronOpenADRVEN Agent using the configuration provided under `utils`:
+
+    ```shell
+    vctl install volttron-openadr-ven --agent-config utils/config_toy_ven.json --tag openadr --start
+    ```
+
+1. Observe the logs to verify that the Event from the local VTN was received by the VolttronOpenADRVEN agent
+
+    ```
+    tail -f volttron.log
+    ```
 
 
 # Development
