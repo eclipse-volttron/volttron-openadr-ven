@@ -93,7 +93,7 @@ root of this repository; the file is named `config_example1.json`
 
 # Testing
 
-If you don't have a dedicated VTN to test the VolttronOpenADR against, you can setup a local VTN instead. After setting up a local VTN, configure an VolttronOpenADRVen Agent against that local VTN and then install the agent on your VOLTTRON instance.
+If you don't have a dedicated VTN to test the VolttronOpenADR against, you can setup a local VTN instead. This VTN will be hosted at localhost on port 8080 (i.e. 127.0.0.1:8080). This VTN will accept registrations from a VEN named 'ven123', requests all reports that the VEN offers, and create an Event for the VEN. After setting up a local VTN, configure an VolttronOpenADRVen Agent against that local VTN and then install the agent on your VOLTTRON instance. Ensure that the VOLTTRON instance is running on the same host that the VTN is running on.
 
 To setup a local VTN, we have provided a script and a custom agent configuration for convenience. Follow the steps below to setup a local VTN and corresponding Volttron OpenADRVen Agent:
 

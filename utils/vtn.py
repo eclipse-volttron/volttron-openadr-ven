@@ -1,3 +1,18 @@
+"""
+=======
+Toy VTN
+=======
+
+This VTN is to be used for testing the VolttronOpenADRVEN agent. This VTN will emit an Event to be polled by the VolttronOpenADRVEN agent, which in
+turn will process the Event and then publish the Event on the Volttron message bus.
+
+Events are informational or instructional messages from the server (VTN) which inform you of price changes, request load reduction, et cetera.
+The Event to be published has a single signal with an OpenADR name of "simple" and is of OpenADR type "level". This Event will have exactly one interval with a
+start time of now and end time of now + five minutes; the payload will be 100.0. When a VolttronOpenADRVEN agent is installed using the
+config_toy_ven.json agent configuration, the agent is expected to poll this Event from the toy VTN. Once the VEN has polled the Event, the VTN
+will stop sending out the Event.
+"""
+
 import asyncio
 from datetime import datetime, timezone, timedelta
 from openleadr import OpenADRServer, enable_default_logging
@@ -67,19 +82,18 @@ server.add_handler('on_create_party_registration',
 server.add_handler('on_register_report', on_register_report)
 
 # Add a prepared event for a VEN that will be picked up when it polls for new messages.
-server.add_event(
-    ven_id='ven_id_123',
-    signal_name='simple',
-    signal_type='level',
-    intervals=[{
-        'dtstart': datetime.now(timezone.utc) + timedelta(minutes=5),
-        'duration': timedelta(minutes=60),
-        'signal_payload': 100.0
-    }],
-    #  intervals=[{'dtstart': datetime(2021, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
-    #              'duration': timedelta(minutes=10),
-    #              'signal_payload': 1}],
-    callback=event_response_callback)
+server.add_event(ven_id='ven_id_123',
+                 signal_name='simple',
+                 signal_type='level',
+                 intervals=[{
+                     'dtstart':
+                     datetime.now(timezone.utc) + timedelta(minutes=5),
+                     'duration':
+                     timedelta(minutes=60),
+                     'signal_payload':
+                     100.0
+                 }],
+                 callback=event_response_callback)
 
 # Run the server on the asyncio event loop
 loop = asyncio.get_event_loop()
