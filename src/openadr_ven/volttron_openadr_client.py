@@ -99,6 +99,9 @@ class OpenADREvent:
         obj_string = jsonapi.dumps(self.event, default=_default_serialzer)
         return jsonapi.loads(obj_string)
 
+    def get_event_id(self) -> str:
+        return self.event['event_descriptor']['event_id']
+
 
 class OpenADRClientInterface(metaclass=abc.ABCMeta):
 
@@ -153,7 +156,7 @@ class VolttronOpenADRClient(OpenADRClientInterface):
         await self._openadr_client.run()
 
     def get_ven_name(self):
-        self._openadr_client.ven_name
+        return self._openadr_client.ven_name
 
     def add_handler(self, event, function):
         self._openadr_client.add_handler(event, function)

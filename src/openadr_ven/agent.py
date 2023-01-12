@@ -25,7 +25,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Callable, Dict
 
-from volttron.client.messaging import (topics, headers)
+from volttron.client.messaging import (headers)
 from volttron.client.vip.agent import Agent
 from volttron.client.vip.agent.subsystems.rpc import RPC
 from volttron.utils import (format_timestamp, get_aware_utc_now, load_config,
@@ -40,20 +40,10 @@ from openadr_ven.volttron_openadr_client import (
     OpenADROpt,
 )
 
-from openadr_ven.constants import (
-    REQUIRED_KEYS,
-    VEN_NAME,
-    VTN_URL,
-    DEBUG,
-    CERT,
-    KEY,
-    PASSPHRASE,
-    VTN_FINGERPRINT,
-    SHOW_FINGERPRINT,
-    CA_FILE,
-    VEN_ID,
-    DISABLE_SIGNATURE,
-)
+from openadr_ven.constants import (REQUIRED_KEYS, VEN_NAME, VTN_URL, DEBUG,
+                                   CERT, KEY, PASSPHRASE, VTN_FINGERPRINT,
+                                   SHOW_FINGERPRINT, CA_FILE, VEN_ID,
+                                   DISABLE_SIGNATURE, OPENADR_EVENT)
 
 from openleadr.objects import Event
 
@@ -192,11 +182,13 @@ class OpenADRVenAgent(Agent):
         except KeyError as e:
             _log.debug(f"Key error: {e}")
             pass
-
-        _log.debug(f"Publishing real/non-test event \n {pformat(event)}")
+        _log.debug(
+            f"Publishing real/non-test event \n {pformat(event.parse_event())}"
+        )
         self.vip.pubsub.publish(
             peer="pubsub",
-            topic=f"{topics.OPENADR_EVENT}/{self.ven_client.get_ven_name()}",
+            topic=
+            f"{OPENADR_EVENT}/{event.get_event_id()}/{self.ven_client.get_ven_name()}",
             headers={headers.TIMESTAMP: format_timestamp(get_aware_utc_now())},
             message=event.parse_event(),
         )
