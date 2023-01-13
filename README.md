@@ -128,7 +128,13 @@ Setup a dedicated environment for the VTN.
     python utils/vtn.py
     ```
 
-    You should see the following when you run the VTN:
+    This VTN uses port 8080 by default. If you want to use a custom port, set the environment variable "VTN_PORT" to your desired port and start the VTN. For example:
+
+    ```shell
+    VTN_PORT=8081 python utils/vtn.py
+    ```
+
+    After you start the VTN, you should see the following logs:
 
     ```shell
 
