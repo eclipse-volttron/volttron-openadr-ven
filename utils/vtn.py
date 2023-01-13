@@ -13,12 +13,15 @@ config_toy_ven.json agent configuration, the agent is expected to poll this Even
 will stop sending out the Event.
 """
 
+import os
 import asyncio
 from datetime import datetime, timezone, timedelta
 from openleadr import OpenADRServer, enable_default_logging
 from functools import partial
 
 enable_default_logging()
+
+PORT = os.getenv("VTN_PORT", 8080)
 
 
 async def on_create_party_registration(registration_info):
@@ -72,7 +75,7 @@ def ven_lookup(ven_id):
 
 
 # Create the server object
-server = OpenADRServer(vtn_id='myvtn')
+server = OpenADRServer(vtn_id='myvtn', http_port=PORT)
 
 # Add the handler for client (VEN) registrations
 server.add_handler('on_create_party_registration',

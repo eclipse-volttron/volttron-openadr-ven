@@ -93,12 +93,21 @@ root of this repository; the file is named `config_example1.json`
 
 # Testing
 
+
 If you don't have a dedicated VTN to test the VolttronOpenADR against, you can setup a local VTN instead. This VTN will be hosted at localhost on port 8080 (i.e. 127.0.0.1:8080). This VTN will accept registrations from a VEN named 'ven123', requests all reports that the VEN offers, and create an Event for the VEN. After setting up a local VTN, configure an VolttronOpenADRVen Agent against that local VTN and then install the agent on your VOLTTRON instance. Ensure that the VOLTTRON instance is running on the same host that the VTN is running on.
 
 To setup a local VTN, we have provided a script and a custom agent configuration for convenience. Follow the steps below to setup a local VTN and corresponding Volttron OpenADRVen Agent:
 
 
-1. Create a virtual environment:
+## Setup VTN
+
+Setup a dedicated environment for the VTN.
+
+
+1. Clone this repo.
+
+
+1. Create a dedicated virtual environment for the VTN:
 
 
     ```shell
@@ -113,11 +122,36 @@ To setup a local VTN, we have provided a script and a custom agent configuration
     pip install openleadr
     ```
 
-1. At the top level of this project, run the VTN server in the foreground so that we can observe logs:
+1. At the top level of this repo, run the VTN server in the foreground so that we can observe logs:
 
     ```shell
     python utils/vtn.py
     ```
+
+    This VTN uses port 8080 by default. If you want to use a custom port, set the environment variable "VTN_PORT" to your desired port and start the VTN. For example:
+
+    ```shell
+    VTN_PORT=8081 python utils/vtn.py
+    ```
+
+    After you start the VTN, you should see the following logs:
+
+    ```shell
+
+    If you provide a 'ven_lookup' to your OpenADRServer() init, OpenLEADR can automatically issue ReregistrationRequests for VENs that don't exist in your system.
+
+    Please see https://openleadr.org/docs/server.html#things-you-should-implement.
+
+    ************************************************************************
+            Your VTN Server is now running at
+        http://127.0.0.1:8080/OpenADR2/Simple/2.0b
+    ************************************************************************
+    ```
+
+
+## Setup VolttronOpenADR Ven
+
+Setup a dedicated environment for the Volttron platform and VolttronOpenADRVen Agent.
 
 1. Open up another terminal, create a folder called temp, and create another virtual environment:
 
@@ -148,8 +182,36 @@ To setup a local VTN, we have provided a script and a custom agent configuration
 
 1. Observe the logs to verify that the Event from the local VTN was received by the VolttronOpenADRVEN agent
 
-    ```
+    ```shell
     tail -f volttron.log
+    ```
+
+    You should expect to see the following in the logs:
+
+    ```shell
+        2023-01-12 12:01:36,222 (volttron-listener-0.2.0rc0 31258) listener.agent(104) INFO: Peer: pubsub, Sender: volttron-openadr-ven-1.0.1a1_1:, Bus: ,
+        Topic: openadr/event/2ab3526f-235b-4c66-8b31-e04a95406913/ven123, Headers: {'TimeStamp': '2023-01-12T20:01:36.215472+00:00', 'min_compatible_version': '3.0', 'max_compatible_version': ''
+        }, Message:
+        {'active_period': {'dtstart': '2023-01-12T20:05:47.204310+00:00',
+                        'duration': 3600},
+        'event_descriptor': {'created_date_time': '2023-01-12T20:00:47.204940+00:00',
+                            'event_id': '2ab3526f-235b-4c66-8b31-e04a95406913',
+                            'event_status': 'far',
+                            'market_context': 'oadr://unknown.context',
+                            'modification_date_time': '2023-01-12T20:00:47.204950+00:00',
+                            'modification_number': 0,
+                            'priority': 0,
+                            'test_event': False},
+        'event_signals': [{'intervals': [{'dtstart': '2023-01-12T20:05:47.204310+00:00',
+                                        'duration': 3600,
+                                        'signal_payload': 100.0,
+                                        'uid': 0}],
+                            'signal_id': '9e3cda6b-9d09-4f5a-99e5-00b41e480d2f',
+                            'signal_name': 'simple',
+                            'signal_type': 'level'}],
+        'response_required': 'always',
+        'targets': [{'ven_id': 'ven_id_123'}],
+        'targets_by_type': {'ven_id': ['ven_id_123']}}
     ```
 
 
