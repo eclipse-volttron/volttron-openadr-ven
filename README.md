@@ -180,7 +180,7 @@ Setup a dedicated environment for the Volttron platform and VolttronOpenADRVen A
     vctl install volttron-openadr-ven --agent-config utils/config_toy_ven.json --tag openadr --start
     ```
 
-1. Observe the logs to verify that the Event from the local VTN was received by the VolttronOpenADRVEN agent
+1. Observe the logs to verify that the Event from the local VTN was received by the VolttronOpenADRVEN agent. The topic follows this format "openadr/event/<event_id>/<ven-name>".
 
     ```shell
     tail -f volttron.log
