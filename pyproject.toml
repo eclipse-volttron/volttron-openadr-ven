@@ -17,7 +17,7 @@ ignore_missing_imports = true
 
 [tool.poetry]
 name = "volttron-openadr-ven"
-version = "0.0.0"
+version = "0.1.0-rc"
 description = "A Volttron agent that acts as a Virtual End Node (VEN) within the OpenADR 2.0b specification."
 authors = ["Mark Bonicillo <mark.bonicillo@pnnl.gov>"]
 license = "Apache-2.0"
