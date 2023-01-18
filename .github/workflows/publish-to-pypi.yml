@@ -1,4 +1,3 @@
----
 # Documentation located
 # https://github.com/marketplace/actions/publish-python-poetry-package
 name: Publish to PyPi
@@ -20,21 +19,21 @@ jobs:
 
   publish_to_pypi:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+    - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+    - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+    - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v1.7
-        with:
+    - name: Build and publish to pypi
+      uses: JRubics/poetry-publish@v1.7
+      with:
           # These are only needed when using test.pypi
           #repository_name: testpypi
           #repository_url: https://test.pypi.org/legacy/
-          pypi_token: ${{ secrets.PYPI_TOKEN }}
-          ignore_dev_requirements: "yes"
+        pypi_token: ${{ secrets.PYPI_TOKEN }}
+        ignore_dev_requirements: yes

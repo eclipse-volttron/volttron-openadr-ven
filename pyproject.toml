@@ -1,6 +1,23 @@
+[build-system]
+requires = ["poetry-core>=1.2.2"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+show_error_context = true
+pretty = true
+show_column_numbers = true
+show_error_codes = true
+exclude = ['docs/']
+
+[tool.mypy-mock]
+ignore_missing_imports = true
+
+[tool.mypy-pytz]
+ignore_missing_imports = true
+
 [tool.poetry]
 name = "volttron-openadr-ven"
-version = "1.0.0"
+version = "0.1.0-rc"
 description = "A Volttron agent that acts as a Virtual End Node (VEN) within the OpenADR 2.0b specification."
 authors = ["Mark Bonicillo <mark.bonicillo@pnnl.gov>"]
 license = "Apache-2.0"
@@ -8,11 +25,8 @@ maintainers = ["Volttron Team <volttron@pnnl.gov>"]
 readme = "README.md"
 homepage = "https://github.com/VOLTTRON/volttron-openadr-ven"
 repository = "https://github.com/VOLTTRON/volttron-openadr-ven"
-packages = [
-    { include = "volttron_openadr_ven" }
-]
+packages = [ { include = "openadr_ven", from = "src" } ]
 keywords = ["volttron", "agent", "openadr", "application"]
-
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -25,41 +39,26 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8,<4.0"
+volttron = "^10.0.2rc0"
+openleadr = "0.5.27"
+cryptography = ">=36.0.1,<37.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.4"
+pytest-cov = "^3.0.0"
 black = "^21.5b2"
-mypy = "^0.812"
 pre-commit = "^2.13.0"
-volttron-client = "^0.3.8"
-openleadr = "^0.5.24"
+volttron-testing = "^0.3.1a7"
+mypy = "^0.982"
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^4.5.0"
+sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.scripts]
-volttron_openadr_ven="volttron_openadr_ven.agent:main"
+volttron-openadr-ven = "openadr_ven.agent:main"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/VOLTTRON/volttron-openadr-ven/issues"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-Sphinx = "^4.4.0"
-pytest-cov = "^3.0.0"
-
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.black]
-line-length = 79
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/'''

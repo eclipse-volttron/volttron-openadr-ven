@@ -131,7 +131,7 @@ dmypy.json
 .idea/
 
 *secret
-config_local.json
 .DS_Store
 AUTHORS
 ChangeLog
+poetry.lock
