@@ -1,3 +1,25 @@
+# -*- coding: utf-8 -*- {{{
+# ===----------------------------------------------------------------------===
+#
+#                 Installable Component of Eclipse VOLTTRON
+#
+# ===----------------------------------------------------------------------===
+#
+# Copyright 2022 Battelle Memorial Institute
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy
+# of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+# ===----------------------------------------------------------------------===
 """
 =======
 Toy VTN
@@ -15,6 +37,7 @@ will stop sending out the Event.
 
 import os
 import asyncio
+import time
 from datetime import datetime, timezone, timedelta
 from openleadr import OpenADRServer, enable_default_logging
 from functools import partial
@@ -22,19 +45,25 @@ from functools import partial
 enable_default_logging()
 
 PORT = os.getenv("VTN_PORT", 8080)
+VALID_VENS = {
+    'ven123': {
+        'ven_id': 'ven_id_123',
+        'reg_id': 'reg_id_123'
+    },
+}
 
 
 async def on_create_party_registration(registration_info):
     """
     Inspect the registration info and return a ven_id and registration_id.
     """
-    print(f"PARTY REGISTRTION")
-    if registration_info['ven_name'] == 'ven123':
-        ven_id = 'ven_id_123'
-        registration_id = 'reg_id_123'
-        return ven_id, registration_id
-    else:
+    print("\n\n\n\nREGISTERING VEN...")
+    # Check whether this VEN is allowed to register
+    # insert your business logic here (e.g. look up the VEN in some database)
+    ven_info = VALID_VENS.get(registration_info['ven_name'], None)
+    if ven_info is None:
         return False
+    return ven_info.get('ven_id'), ven_info.get('reg_id')
 
 
 async def on_register_report(ven_id, resource_id, measurement, unit, scale,
@@ -42,7 +71,9 @@ async def on_register_report(ven_id, resource_id, measurement, unit, scale,
     """
     Inspect a report offering from the VEN and return a callback and sampling interval for receiving the reports.
     """
-    callback = partial(on_update_report,
+    # if necessary, add business logic on whether to register a report
+    # the partial function creates a version of your callback with default parameters filled in
+    callback = partial(process_individual_report,
                        ven_id=ven_id,
                        resource_id=resource_id,
                        measurement=measurement)
@@ -50,21 +81,44 @@ async def on_register_report(ven_id, resource_id, measurement, unit, scale,
     return callback, sampling_interval
 
 
-async def on_update_report(data, ven_id, resource_id, measurement):
+async def process_individual_report(data, ven_id, resource_id, measurement):
     """
     Callback that receives report data from the VEN and handles it.
     """
-    for time, value in data:
+    for time_t, value in data:
+        print("\n\n\n\nRECEIVED REPORT FROM VEN")
         print(
-            f"Ven {ven_id} reported {measurement} = {value} at time {time} for resource {resource_id}"
+            f"ven_id: {ven_id}\n Device: {resource_id}\n Measurement: {measurement}\n Value: {value}\n Time: {time_t}"
         )
+        # Add business logic to act on report data
+        # For example, you can insert report data into some database
+        # or use it as an input to an algorithm that manages energy control
+        # In the example below, regardless of the measurement, our VTN server
+        # will send an event back to the VEN
+        print("\n\n\n\nPROCESSING REPORT DATA")
+        time.sleep(3)
+        print("\n\n\n\nSENDING EVENT TO VEN")
+        server.add_event(ven_id=ven_id,
+                         signal_name='simple',
+                         signal_type='level',
+                         intervals=[{
+                             'dtstart':
+                             datetime.now(timezone.utc) + timedelta(minutes=5),
+                             'duration':
+                             timedelta(minutes=60),
+                             'signal_payload':
+                             100.0
+                         }],
+                         callback=event_response_callback)
 
 
 async def event_response_callback(ven_id, event_id, opt_type):
     """
     Callback that receives the response from a VEN to an Event.
     """
-    print(f"VEN {ven_id} responded to Event {event_id} with: {opt_type}")
+    print(
+        f"\n\n\n\nVEN {ven_id} RESPONDED TO EVENT {event_id} WITH RESPONSE: {opt_type}"
+    )
 
 
 def ven_lookup(ven_id):
@@ -84,21 +138,7 @@ server.add_handler('on_create_party_registration',
 # Add the handler for report registrations from the VEN
 server.add_handler('on_register_report', on_register_report)
 
-# Add a prepared event for a VEN that will be picked up when it polls for new messages.
-server.add_event(ven_id='ven_id_123',
-                 signal_name='simple',
-                 signal_type='level',
-                 intervals=[{
-                     'dtstart':
-                     datetime.now(timezone.utc) + timedelta(minutes=5),
-                     'duration':
-                     timedelta(minutes=60),
-                     'signal_payload':
-                     100.0
-                 }],
-                 callback=event_response_callback)
-
 # Run the server on the asyncio event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 loop.create_task(server.run())
 loop.run_forever()
