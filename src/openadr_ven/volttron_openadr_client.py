@@ -121,10 +121,19 @@ class OpenADRClientInterface(metaclass=abc.ABCMeta):
     def add_report(
         self,
         callback: Callable,
-        report_name: OpenADRReportName,
         resource_id: str,
+        report_name: OpenADRReportName,
         measurement: OpenADRMeasurements,
+        unit: str,
     ):
+        """Add a new reporting capability to the client.
+
+        :param callback:  A callback or coroutine that will fetch the value for a specific report. This callback will be passed the report_id and the r_id of the requested value.
+        :param resource_id: A specific name for this resource within this report.
+        :param report_name: An OpenADR name for this report
+        :param measurement: The quantity that is being measured. Optional for TELEMETRY_STATUS reports.
+        :param unit: The unit for this measurement
+        """
         pass
 
 
@@ -161,6 +170,19 @@ class VolttronOpenADRClient(OpenADRClientInterface):
     def add_handler(self, event, function):
         self._openadr_client.add_handler(event, function)
 
-    def add_report(self, callback, report_name, resource_id, measurement):
-        self._openadr_client.add_report(callback, report_name, resource_id,
-                                        measurement)
+    def add_report(self, callback, resource_id, report_name, measurement,
+                   unit):
+        self._openadr_client.add_report(callback=callback,
+                                        resource_id=resource_id,
+                                        report_name=report_name,
+                                        measurement=measurement,
+                                        unit=unit,
+                                        data_collection_mode="incremental",
+                                        report_duration=timedelta(
+                                            days=0,
+                                            seconds=3600,
+                                            microseconds=0,
+                                            milliseconds=0,
+                                            minutes=0,
+                                            hours=0,
+                                            weeks=0))

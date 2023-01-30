@@ -24,6 +24,7 @@
 from pathlib import Path
 from pprint import pformat
 from typing import Callable, Dict
+from functools import partial
 
 from volttron.client.messaging import (headers)
 from volttron.client.vip.agent import Agent
@@ -105,17 +106,22 @@ class OpenADRVenAgent(Agent):
         # Add event handling capability to the client
         # if you want to add more handlers on a specific event, you must create a coroutine in this class
         # and then add it as the second input for 'self.ven_client.add_handler(<some event>, <coroutine>)'
+        _log.info("Adding handlers...")
         self.ven_client.add_handler("on_event", self.handle_event)
+
+        # add reports
+        _log.info("Adding reports...")
+        self._add_reports()
 
         _log.info("Starting OpenADRVen agent...")
         gevent.spawn_later(3, self._start_asyncio_loop)
 
     def _start_asyncio_loop(self) -> None:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         loop.create_task(self.ven_client.run())
         loop.run_forever()
 
-    # ***************** Methods for Servicing VTN Requests ********************
+    # ***************** Methods for Servicing VTN Events ********************
 
     async def handle_event(self, event: Event) -> OpenADROpt:
         """Publish event to the Volttron message bus. This coroutine will be called when there is an event to be handled.
@@ -138,14 +144,33 @@ class OpenADRVenAgent(Agent):
 
         return OpenADROpt.OPT_IN
 
+    # ***************** Methods for Offering Reports to a VTN ********************
+
+    def _add_reports(self):
+        # add reports at startup of this agent
+        # Insert your custom reports that you want to offer to the VTN at startup
+        # Below is an example:
+        # device = 'Device001'
+        # self.ven_client.add_report(
+        #     callback=partial(self.read_voltage, device=device),
+        #     resource_id=device,
+        #     report_name=OpenADRReportName.TELEMETRY_USAGE,
+        #     measurement=OpenADRMeasurements.VOLTAGE,
+        #     unit="V")
+        return
+
+    # Adding reports requires a callback; below is an example of a callboack for the report example above
+    # async def read_voltage(self, device):
+    #     _log.info(f"Reading voltage from device {device}")
+    #     ## Add logic to read voltage from a device
+    #     await asyncio.sleep(5)
+    #     return 42
+
     @RPC.export
-    def add_report_capability(
-        self,
-        callback: Callable,
-        report_name: OpenADRReportName,
-        resource_id: str,
-        measurement: OpenADRMeasurements,
-    ) -> tuple:
+    def add_report_capability(self, callback: Callable,
+                              report_name: OpenADRReportName, resource_id: str,
+                              measurement: OpenADRMeasurements,
+                              unit: str) -> None:
         """Add a new reporting capability to the client.
 
         This method is remotely accessible by other agents through Volttron's feature Remote Procedure Call (RPC);
@@ -157,16 +182,12 @@ class OpenADRVenAgent(Agent):
         :param measurement: The quantity that is being measured
         :return: Returns a tuple consisting of a report_specifier_id (str) and an r_id (str) an identifier for OpenADR messages
         """
-        report_specifier_id, r_id = self.ven_client.add_report(
-            callback=callback,
-            report_name=report_name,
-            resource_id=resource_id,
-            measurement=measurement,
-        )
-        _log.info(
-            f"Output from add_report: report_specifier_id: {report_specifier_id}, r_id: {r_id}"
-        )
-        return report_specifier_id, r_id
+        self.ven_client.add_report(callback=callback,
+                                   report_name=report_name,
+                                   resource_id=resource_id,
+                                   measurement=measurement,
+                                   unit=unit)
+        return
 
     # ***************** VOLTTRON Pub/Sub Requests ********************
     def publish_event(self, event: OpenADREvent) -> None:
