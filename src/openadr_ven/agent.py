@@ -44,7 +44,7 @@ from openadr_ven.volttron_openadr_client import (
 from openadr_ven.constants import (REQUIRED_KEYS, VEN_NAME, VTN_URL, DEBUG,
                                    CERT, KEY, PASSPHRASE, VTN_FINGERPRINT,
                                    SHOW_FINGERPRINT, CA_FILE, VEN_ID,
-                                   DISABLE_SIGNATURE, OPENADR_EVENT)
+                                   DISABLE_SIGNATURE, OPENADR_EVENT, DEMO_VEN)
 
 from openleadr.objects import Event
 
@@ -111,7 +111,7 @@ class OpenADRVenAgent(Agent):
 
         # add reports
         _log.info("Adding reports...")
-        self._add_reports()
+        self.add_reports(demo_report=config.get(DEMO_VEN))
 
         _log.info("Starting OpenADRVen agent...")
         gevent.spawn_later(3, self._start_asyncio_loop)
@@ -146,25 +146,30 @@ class OpenADRVenAgent(Agent):
 
     # ***************** Methods for Offering Reports to a VTN ********************
 
-    def _add_reports(self):
+    def add_reports(self, demo_report=False):
         # add reports at startup of this agent
         # Insert your custom reports that you want to offer to the VTN at startup
-        # Below is an example:
-        # device = 'Device001'
-        # self.ven_client.add_report(
-        #     callback=partial(self.read_voltage, device=device),
-        #     resource_id=device,
-        #     report_name=OpenADRReportName.TELEMETRY_USAGE,
-        #     measurement=OpenADRMeasurements.VOLTAGE,
-        #     unit="V")
+
+        # If you are testing out the agent using the provided toy VTN, you should enable adding the demo report
+        if demo_report:
+            self._add_report_demo()
         return
 
+    def _add_report_demo(self):
+        device = 'Device001'
+        self.ven_client.add_report(
+            callback=partial(self._read_voltage_demo, device=device),
+            resource_id=device,
+            report_name=OpenADRReportName.TELEMETRY_USAGE,
+            measurement=OpenADRMeasurements.VOLTAGE,
+            unit="V")
+
     # Adding reports requires a callback; below is an example of a callboack for the report example above
-    # async def read_voltage(self, device):
-    #     _log.info(f"Reading voltage from device {device}")
-    #     ## Add logic to read voltage from a device
-    #     await asyncio.sleep(5)
-    #     return 42
+    async def _read_voltage_demo(self, device):
+        _log.info(f"Reading voltage from device {device}")
+        ## Add logic to read voltage from a device
+        await asyncio.sleep(5)
+        return 42
 
     @RPC.export
     def add_report_capability(self, callback: Callable,
@@ -259,6 +264,7 @@ class OpenADRVenAgent(Agent):
         show_fingerprint = bool(config.get(SHOW_FINGERPRINT, True))
         ven_id = config.get(VEN_ID)
         disable_signature = bool(config.get(DISABLE_SIGNATURE))
+        demo_ven = config.get(DEMO_VEN)
 
         return {
             VEN_NAME: ven_name,
@@ -272,6 +278,7 @@ class OpenADRVenAgent(Agent):
             CA_FILE: ca_file,
             VEN_ID: ven_id,
             DISABLE_SIGNATURE: disable_signature,
+            DEMO_VEN: demo_ven
         }
 
     def _check_required_key(self, required_key: str, key_actual: str) -> None:

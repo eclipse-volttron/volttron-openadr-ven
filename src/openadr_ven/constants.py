@@ -34,5 +34,6 @@ CA_FILE = "ca_file"
 VEN_ID = "ven_id"
 DISABLE_SIGNATURE = "disable_signature"
 REQUIRED_KEYS = [VEN_NAME, VTN_URL]
+DEMO_VEN = "demo_ven"
 
 OPENADR_EVENT = "openadr/event"

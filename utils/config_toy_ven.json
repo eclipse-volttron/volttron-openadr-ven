@@ -1,5 +1,6 @@
 {
     "ven_name": "ven123",
     "vtn_url": "http://127.0.0.1:8080/OpenADR2/Simple/2.0b",
-    "debug": true
+    "debug": true,
+    "demo_ven": true
 }
