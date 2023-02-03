@@ -111,7 +111,7 @@ class OpenADRVenAgent(Agent):
 
         # add reports
         _log.info("Adding reports...")
-        self.add_reports(demo_report=config.get(DEMO_VEN))
+        self.add_reports(demo_report=config.get(DEMO_VEN, False))
 
         _log.info("Starting OpenADRVen agent...")
         gevent.spawn_later(3, self._start_asyncio_loop)
@@ -264,7 +264,7 @@ class OpenADRVenAgent(Agent):
         show_fingerprint = bool(config.get(SHOW_FINGERPRINT, True))
         ven_id = config.get(VEN_ID)
         disable_signature = bool(config.get(DISABLE_SIGNATURE))
-        demo_ven = config.get(DEMO_VEN)
+        demo_ven = config.get(DEMO_VEN, False)
 
         return {
             VEN_NAME: ven_name,
