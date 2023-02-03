@@ -27,6 +27,7 @@ OpenADR (Automated Demand Response) is a standard for alerting and responding to
 1. Install volttron and start the platform.
 
     ```shell
+
     pip install volttron
 
 
@@ -111,27 +112,27 @@ Setup a dedicated environment for the VTN.
 
 
     ```shell
-    python -m venv env
-    source env/bin/activate
+    python -m venv venv-vtn
+    source venv-vtn/bin/activate
     ```
 
 
 1. Install [openleadr](https://pypi.org/project/openleadr/):
 
     ```shell
-    pip install openleadr
+    (venv-vtn) $ pip install openleadr
     ```
 
 1. At the top level of this repo, run the VTN server in the foreground so that we can observe logs:
 
     ```shell
-    python utils/vtn.py
+    (venv-vtn) $ python utils/vtn.py
     ```
 
     This VTN uses port 8080 by default. If you want to use a custom port, set the environment variable "VTN_PORT" to your desired port and start the VTN. For example:
 
     ```shell
-    VTN_PORT=8081 python utils/vtn.py
+    (venv-vtn) $ VTN_PORT=8081 python utils/vtn.py
     ```
 
     After you start the VTN, you should see the following logs:
@@ -158,32 +159,38 @@ Setup a dedicated environment for the Volttron platform and VolttronOpenADRVen A
     ```shell
     mkdir temp
     cd temp
-    python -m venv env
-    source env/bin/activate
+    python -m venv venv-openleadr
+    source venv-openleadr/bin/activate
     ```
 
 1. Install volttron:
 
     ```shell
-    pip install volttron
+    (venv-openleadr) $ pip install volttron
     ```
 
 1. Run volttron in the background:
 
     ```shell
-    volttron -vv -l volttron.log &
+    (venv-openleadr) $ volttron -vv -l volttron.log &
+    ```
+
+1. Install a VolttronListener Agent so that you can view all topics published on logs:
+
+    ```shell
+    (venv-openleadr) $ vctl install volttron-listener --start
     ```
 
 1. Install the VolttronOpenADRVEN Agent using the configuration provided under `utils`:
 
     ```shell
-    vctl install volttron-openadr-ven --agent-config utils/config_toy_ven.json --tag openadr --start
+    (venv-openleadr) $ vctl install volttron-openadr-ven --agent-config utils/config_toy_ven.json --tag openadr --start
     ```
 
 1. Observe the logs to verify that the Event from the local VTN was received by the VolttronOpenADRVEN agent. The topic follows this format "openadr/event/<event_id>/<ven-name>".
 
     ```shell
-    tail -f volttron.log
+    (venv-openleadr) $ tail -f volttron.log
     ```
 
     You should expect to see the following in the logs:
